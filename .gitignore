@@ -1,0 +1,11 @@
+# Dependencias y temporales
+node_modules/
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
+
+# Credenciales privadas de Firebase (Opcional si deseas mantenerlas privadas):
+# js/firebase-config.js

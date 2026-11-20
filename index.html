@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kira PET love - Tienda Online de Mascotas</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+  <!-- Notificación Toast -->
+  <div id="toast" class="toast">Mensaje</div>
+
+  <!-- CABECERA PRINCIPAL KIRA PET LOVE -->
+  <header class="ml-header">
+    <div class="ml-header-top">
+      <div class="header-container">
+        
+        <!-- Logo -->
+        <div class="logo-area" id="goHomeBtn">
+          <span class="logo-icon" id="headerLogoIcon">🐾</span>
+          <div>
+            <span class="logo-title" id="headerLogoTitle">Kira PET love</span>
+            <span class="logo-sub" id="headerLogoSub">Tu Pet Shop Online</span>
+          </div>
+        </div>
+
+        <!-- Buscador -->
+        <div class="search-container">
+          <input type="text" id="storeSearchInput" placeholder="Buscar alimentos, juguetes, camas, collares para tu mascota...">
+          <button id="storeSearchBtn" class="search-btn">🔍</button>
+        </div>
+
+        <!-- Navegación de Usuario -->
+        <div class="user-nav">
+          
+          <!-- Si NO ha iniciado sesión -->
+          <div id="userLoggedOut" class="auth-buttons">
+            <button class="nav-link-btn" id="openRegisterBtn">Creá tu cuenta</button>
+            <button class="nav-link-btn font-bold" id="openLoginBtn">Ingresá</button>
+          </div>
+
+          <!-- Si YA inició sesión -->
+          <div id="userLoggedIn" class="user-profile" style="display: none;">
+            <div class="user-greeting-box">
+              <span class="user-greeting">Hola, <strong id="userNameNav">Usuario</strong></span>
+              <span class="role-badge" id="userRoleBadge">Comprador</span>
+            </div>
+
+            <!-- Mi Perfil -->
+            <button class="nav-link-btn" id="openProfileBtn">
+              👤 Mi Perfil
+            </button>
+
+            <!-- Mis Compras (solo para compradores) -->
+            <button class="nav-link-btn" id="openMyOrdersBtn" style="display: none;">
+              📦 Mis Compras
+            </button>
+
+            <button class="nav-link-btn logout-link" id="logoutBtn">Salir</button>
+          </div>
+
+          <!-- Carrito de Compras -->
+          <button class="cart-btn" id="openCartBtn">
+            🛒 <span class="cart-text">Carrito</span>
+            <span class="cart-badge" id="cartCount">0</span>
+          </button>
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==============================================================
+         BARRA SUPERIOR DE ACCIONES (AQUÍ APARECEN TUS OPCIONES DE ADMIN)
+         ============================================================== -->
+    <div class="ml-header-bottom">
+      
+      <!-- 1. Para Compradores o Visitantes: Categorías de productos -->
+      <div id="buyerCategoriesBar" class="header-container categories-bar">
+        <button class="cat-pill active" data-cat="todos">✨ Todos los productos</button>
+        <button class="cat-pill" data-cat="Alimentos">🍖 Alimentos & Snacks</button>
+        <button class="cat-pill" data-cat="Juguetes">🎾 Juguetes</button>
+        <button class="cat-pill" data-cat="Camas">🛋️ Camas & Rascadores</button>
+        <button class="cat-pill" data-cat="Accesorios">🦮 Accesorios & Correas</button>
+        <button class="cat-pill" data-cat="Salud">💊 Farmacia & Cuidado</button>
+      </div>
+
+      <!-- 2. Para el Administrador y Vendedor: Directamente en la barra -->
+      <div id="adminNavHeaderBar" class="header-container categories-bar" style="display: none;">
+        <button class="cat-pill active" id="adminBarStoreBtn">🛍️ Ver Tienda</button>
+        <button class="cat-pill" id="adminBarProductsBtn">📦 Mis Productos</button>
+        <button class="cat-pill" id="adminBarOrdersBtn">
+          📋 Pedidos Clientes (<span id="adminBarOrdersCount">0</span>)
+        </button>
+        <button class="cat-pill admin-only-pill" id="adminBarUsersBtn" style="display: none;">
+          👥 Gestión de Usuarios
+        </button>
+        <button class="cat-pill admin-only-pill" id="adminBarSettingsBtn" style="display: none;">
+          ⚙️ Logo y Tienda
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ESTADO DE CONEXIÓN FIREBASE -->
+  <div class="connection-status-bar">
+    <div id="connectionStatus" class="status-indicator waiting">
+      <span class="dot"></span>
+      <span id="statusText">Conectando con la base de datos...</span>
+    </div>
+  </div>
+
+  <!-- ==============================================================
+       VISTA 1: TIENDA PRINCIPAL
+       ============================================================== -->
+  <main class="main-container" id="storeView">
+
+    <!-- BANNER DE ORDEN ACTIVA EN TIEMPO REAL (Para el Comprador) -->
+    <div id="buyerActiveOrderBanner" class="active-order-banner" style="display: none;">
+      <div>
+        <span class="banner-title">📦 ¡Tienes una orden en curso!</span>
+        <span class="banner-status" id="buyerActiveOrderStatus">En Preparación</span>
+      </div>
+      <button class="btn btn-secondary btn-sm" id="viewActiveOrderBtn" style="background:#ffffff; color:#0f766e; font-weight:800;">
+        Ver seguimiento en vivo →
+      </button>
+    </div>
+
+    <!-- BANNER Y CARRUSEL DE PRODUCTOS DESTACADOS -->
+    <section class="promo-banner-carousel">
+      <div class="promo-header-row">
+        <div>
+          <span class="banner-badge">🔥 DESTACADOS KIRA PET LOVE</span>
+          <h2>Todo lo que tu mascota ama, al mejor precio</h2>
+        </div>
+      </div>
+
+      <!-- Carrusel de productos administrable -->
+      <div class="carousel-container" id="featuredCarouselWrapper">
+        <button class="carousel-btn prev" id="carouselPrevBtn" aria-label="Anterior">❮</button>
+        <div class="carousel-viewport">
+          <div class="carousel-track" id="featuredCarouselTrack">
+            <!-- Inyectado dinámicamente por JS con los productos que el admin elija -->
+          </div>
+        </div>
+        <button class="carousel-btn next" id="carouselNextBtn" aria-label="Siguiente">❯</button>
+      </div>
+      <div class="carousel-dots" id="carouselDots"></div>
+    </section>
+
+    <section class="products-section">
+      <div class="section-header">
+        <h2 id="currentCategoryTitle">Catálogo de Productos para Mascotas</h2>
+        <span class="products-count" id="productsCount">Cargando...</span>
+      </div>
+
+      <div class="products-grid" id="productsGrid">
+        <div class="loading-products">
+          <div class="spinner"></div>
+          <p>Cargando productos en tiempo real desde Firebase...</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==============================================================
+       VISTA 2: MIS PRODUCTOS (Formulario a un lado y Lista con Buscador al otro)
+       ============================================================== -->
+  <section class="main-container" id="productsManagementView" style="display: none;">
+    <div class="admin-header-row">
+      <div>
+        <h2>📦 Gestión de Productos</h2>
+        <p class="subtitle">Publica productos a la izquierda y filtra o gestiona tu inventario a la derecha en tiempo real.</p>
+      </div>
+      <button class="btn btn-secondary" id="exitProductsBtn">← Volver a la Tienda</button>
+    </div>
+
+    <!-- Contenedor Lado a Lado (Formulario a un lado | Productos al otro) -->
+    <div class="products-management-layout">
+
+      <!-- COLUMNA IZQUIERDA: Registro de Producto -->
+      <div class="card add-product-card-col">
+        <div class="card-title">
+          <h3>➕ Registrar Producto</h3>
+          <p class="subtitle" style="font-size: 0.85rem; margin-top: 2px;">Completa los datos para publicar en la tienda.</p>
+        </div>
+        <form id="newProductForm">
+          <div class="form-group">
+            <label>Nombre del Producto *</label>
+            <input type="text" id="prodTitle" placeholder="Ej. Alimento Premium Royal Canin 15kg" required>
+          </div>
+
+          <div class="form-group">
+            <label>Categoría *</label>
+            <select id="prodCategory">
+              <option value="Alimentos">🍖 Alimentos & Snacks</option>
+              <option value="Juguetes">🎾 Juguetes</option>
+              <option value="Camas">🛋️ Camas & Rascadores</option>
+              <option value="Accesorios">🦮 Accesorios & Correas</option>
+              <option value="Salud">💊 Farmacia & Cuidado</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-1">
+              <label>Precio ($) *</label>
+              <input type="number" id="prodPrice" placeholder="Ej. 18500" required min="1">
+            </div>
+            <div class="form-group col-1">
+              <label>Stock *</label>
+              <input type="number" id="prodStock" placeholder="Ej. 25" required min="0" value="10">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Marca o Fabricante</label>
+            <input type="text" id="prodBrand" placeholder="Ej. Royal Canin, Kong, Pedigree" value="Kira Pet Oficial">
+          </div>
+
+          <div class="form-group">
+            <label>📁 Subir Imagen desde tu PC 💻</label>
+            <input type="file" id="prodImageFile" accept="image/*">
+            <div id="newProdPreview" class="image-upload-preview" style="display: none;"></div>
+          </div>
+
+          <div class="form-group">
+            <label>O Enlace Web de Imagen / Emoji</label>
+            <input type="text" id="prodImage" placeholder="Ej. https://images.unsplash.com/... o 🐶, 🍖" value="🐾">
+            <small style="color: #64748b; font-size: 0.8rem; display: block; margin-top: 3px;">
+              Puedes subir un archivo desde tu PC o pegar un link de imagen de internet.
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label>Descripción detallada del producto</label>
+            <textarea id="prodDesc" rows="3" placeholder="Detalles de nutrientes, características, medidas, materiales..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="prodFeatured" checked>
+              ⭐ Mostrar en el Carrusel de la Tienda Principal
+            </label>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block" id="saveProdBtn">
+            Publicar Producto en Vivo
+          </button>
+        </form>
+      </div>
+
+      <!-- COLUMNA DERECHA: Mis Productos con Buscador de Filtrado -->
+      <div class="card admin-table-card-col">
+        <div class="table-header-with-search">
+          <div>
+            <h3>📦 Mis Productos (<span id="adminProductsCountBadge">0</span>)</h3>
+            <p class="subtitle" style="font-size: 0.82rem;">Modifica precios o elimina productos al instante.</p>
+          </div>
+          
+          <!-- Buscador para filtrar productos -->
+          <div class="admin-prod-search-box">
+            <input type="text" id="adminProductFilterInput" placeholder="🔍 Filtrar por nombre o categoría...">
+          </div>
+        </div>
+
+        <div class="table-responsive" style="margin-top: 14px;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Categoría</th>
+                <th>Precio</th>
+                <th>Stock</th>
+                <th class="text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="adminProductsTableBody">
+              <!-- Inyectado por JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==============================================================
+       VISTA 3: PEDIDOS CLIENTES (Solo lo que pediste)
+       ============================================================== -->
+  <section class="main-container" id="ordersManagementView" style="display: none;">
+    <div class="admin-header-row">
+      <div>
+        <h2>📋 Pedidos de Clientes en Vivo</h2>
+        <p class="subtitle">Cada compra realizada en la tienda aparece aquí al instante.</p>
+      </div>
+      <button class="btn btn-secondary" id="exitOrdersBtn">← Volver a la Tienda</button>
+    </div>
+
+    <div class="card admin-table-card">
+      <div class="table-header-with-search">
+        <div>
+          <h3>📋 Listado de Pedidos (<span id="adminOrdersCountBadge">0</span>)</h3>
+          <p class="subtitle" style="font-size: 0.82rem;">Supervisa compras y actualiza su estado logístico en tiempo real.</p>
+        </div>
+        <div class="admin-prod-search-box">
+          <input type="text" id="adminOrderFilterInput" placeholder="🔍 Filtrar por cliente, pedido, estado o producto...">
+        </div>
+      </div>
+
+      <div class="table-responsive" style="margin-top: 14px;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>N° Pedido</th>
+              <th>Cliente</th>
+              <th>Productos Comprados</th>
+              <th>Total</th>
+              <th>Estado</th>
+              <th class="text-right">Cambiar Estado</th>
+            </tr>
+          </thead>
+          <tbody id="adminOrdersTableBody">
+            <!-- Inyectado por JS -->
+          </tbody>
+        </table>
+      </div>
+      <div id="noOrdersMsg" class="empty-state" style="display: none;">
+        <p>Todavía no hay pedidos registrados.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==============================================================
+       VISTA 4: GESTIÓN DE USUARIOS (Solo lo que pediste)
+       ============================================================== -->
+  <section class="main-container" id="usersManagementView" style="display: none;">
+    <div class="admin-header-row">
+      <div>
+        <h2>👥 Gestión de Usuarios y Roles</h2>
+        <p class="subtitle">Como Administrador, puedes ver a los usuarios registrados y cambiar su rol en tiempo real.</p>
+      </div>
+      <button class="btn btn-secondary" id="exitUsersBtn">← Volver a la Tienda</button>
+    </div>
+
+    <div class="card admin-table-card">
+      <div class="table-header-with-search">
+        <div>
+          <h3>👥 Directorio de Usuarios (<span id="adminUsersCountBadge">0</span>)</h3>
+          <p class="subtitle" style="font-size: 0.82rem;">Modifica permisos y roles de usuarios registrados al instante.</p>
+        </div>
+        <div class="admin-prod-search-box">
+          <input type="text" id="adminUserFilterInput" placeholder="🔍 Filtrar por nombre, email, teléfono o rol...">
+        </div>
+      </div>
+
+      <div class="table-responsive" style="margin-top: 14px;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Email</th>
+              <th>Teléfono</th>
+              <th>Rol Actual</th>
+              <th class="text-right">Modificar Rol</th>
+            </tr>
+          </thead>
+          <tbody id="adminUsersTableBody">
+            <!-- Inyectado por JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==============================================================
+       VISTA 5: MIS COMPRAS (Para el Comprador)
+       ============================================================== -->
+  <section class="main-container" id="myOrdersView" style="display: none;">
+    <div class="admin-header-row">
+      <div>
+        <h2>📦 Mis Compras</h2>
+        <p class="subtitle">Sigue el estado de tus compras en tiempo real hasta que sean completadas por la tienda.</p>
+      </div>
+      <button class="btn btn-secondary" id="exitMyOrdersBtn">← Volver a la Tienda</button>
+    </div>
+
+    <!-- Sección de Órdenes Activas en Curso (Hasta que el admin le dé completada) -->
+    <div id="myActiveOrdersSection"></div>
+
+    <!-- Historial de Todas las Compras -->
+    <div class="card">
+      <h3 style="color: #0f766e; margin-bottom: 12px; font-size: 1.15rem;">🛍️ Historial de Compras Realizadas</h3>
+      <div id="myOrdersListContainer">
+        <!-- Inyectado por JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ==============================================================
+       MODALES (CARRITO, REGISTRO, LOGIN, MI PERFIL)
+       ============================================================== -->
+
+  <!-- Modal Carrito -->
+  <div id="cartModal" class="modal-backdrop" style="display: none;">
+    <div class="cart-drawer">
+      <div class="cart-header">
+        <h3>🛒 Tu Carrito de Compras</h3>
+        <button class="modal-close-btn" id="closeCartBtn">&times;</button>
+      </div>
+
+      <div class="cart-body" id="cartItemsList">
+        <!-- Inyectado por JS -->
+      </div>
+
+      <div class="cart-footer">
+        <div class="cart-total-row">
+          <span>Total a pagar:</span>
+          <strong id="cartTotalPrice">$0</strong>
+        </div>
+        <button class="btn btn-checkout btn-block" id="checkoutBtn">
+          Confirmar Compra
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Registro -->
+  <div id="registerModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h3>Creá tu cuenta en Kira PET love</h3>
+          <p class="modal-subtitle">Completá tus datos para ingresar al pet shop</p>
+        </div>
+        <button class="modal-close-btn" id="closeRegisterBtn">&times;</button>
+      </div>
+      <form id="authRegisterForm">
+        <div class="form-group">
+          <label>Nombre y Apellido *</label>
+          <input type="text" id="regName" placeholder="Ej. Juan Pérez" required autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label>E-mail *</label>
+          <input type="email" id="regEmail" placeholder="juan@correo.com" required autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label>Teléfono / WhatsApp *</label>
+          <input type="tel" id="regPhone" placeholder="+54 9 11 1234-5678" required autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label>Creá una contraseña *</label>
+          <input type="password" id="regPassword" placeholder="Al menos 6 caracteres" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" id="regSubmitBtn">
+          Registrarme
+        </button>
+
+        <p style="text-align: center; margin-top: 14px; font-size: 0.88rem; color: #64748b;">
+          ¿Ya tenés una cuenta? 
+          <a href="#" id="switchToLoginLink" style="color: #0f766e; font-weight: 700; text-decoration: none;">Ingresá acá</a>
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal de Inicio de Sesión Único -->
+  <div id="loginModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h3>¡Hola! Ingresá a tu cuenta</h3>
+          <p class="modal-subtitle">Ingresa con tu correo y contraseña</p>
+        </div>
+        <button class="modal-close-btn" id="closeLoginBtn">&times;</button>
+      </div>
+      <form id="authLoginForm">
+        <div class="form-group">
+          <label>E-mail</label>
+          <input type="email" id="loginEmail" placeholder="juan@correo.com" required autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label>Contraseña</label>
+          <input type="password" id="loginPassword" placeholder="Tu contraseña" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="loginSubmitBtn">
+          Ingresar
+        </button>
+
+        <p style="text-align: center; margin-top: 14px; font-size: 0.88rem; color: #64748b;">
+          ¿No tenés cuenta todavía? 
+          <a href="#" id="switchToRegisterLink" style="color: #0f766e; font-weight: 700; text-decoration: none;">Creá tu cuenta acá</a>
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal de "Mi Perfil y Seguridad" -->
+  <div id="profileModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h3>👤 Mi Perfil y Seguridad</h3>
+          <p class="modal-subtitle">Modifica tu correo de acceso, contraseña o datos personales</p>
+        </div>
+        <button class="modal-close-btn" id="closeProfileBtn">&times;</button>
+      </div>
+      <form id="userProfileForm">
+        <div class="form-group">
+          <label>Nombre y Apellido</label>
+          <input type="text" id="profName" required>
+        </div>
+        <div class="form-group">
+          <label>E-mail de acceso (Usuario)</label>
+          <input type="email" id="profEmail" required>
+        </div>
+        <div class="form-group">
+          <label>Teléfono / WhatsApp</label>
+          <input type="tel" id="profPhone">
+        </div>
+        <div class="form-group">
+          <label>Nueva Contraseña</label>
+          <input type="password" id="profPassword" placeholder="Escribe tu nueva clave para cambiarla">
+          <small style="color: #666; font-size: 0.8rem; display: block; margin-top: 3px;">
+            Déjala en blanco si deseas conservar tu contraseña actual.
+          </small>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="saveProfileBtn">
+          Guardar Cambios de Perfil
+        </button>
+
+        <!-- Acceso directo a Mis Compras desde el Perfil -->
+        <div class="profile-orders-section" style="margin-top: 18px; padding-top: 14px; border-top: 1px solid #e2e8f0;">
+          <h4 style="color: #0f766e; font-size: 0.95rem; margin-bottom: 6px;">🛍️ Compras y Pedidos</h4>
+          <p style="font-size: 0.82rem; color: #64748b; margin-bottom: 10px;">Consulta el estado de tus pedidos en curso o el historial completo de compras.</p>
+          <button type="button" class="btn btn-secondary btn-block" id="profileViewOrdersBtn">
+            📦 Ver Mis Compras Realizadas (<span id="profileOrdersCount">0</span>)
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Editar Producto (Administrador y Vendedor) -->
+  <div id="editProductModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h3>✏️ Editar Producto</h3>
+          <p class="modal-subtitle">Modifica la información, imagen, precio o inventario</p>
+        </div>
+        <button class="modal-close-btn" id="closeEditProductBtn">&times;</button>
+      </div>
+      <form id="editProductForm">
+        <input type="hidden" id="editProdId">
+
+        <div class="form-group">
+          <label>Nombre del Producto *</label>
+          <input type="text" id="editProdTitle" required>
+        </div>
+
+        <div class="form-group">
+          <label>Categoría *</label>
+          <select id="editProdCategory">
+            <option value="Alimentos">🍖 Alimentos & Snacks</option>
+            <option value="Juguetes">🎾 Juguetes</option>
+            <option value="Camas">🛋️ Camas & Rascadores</option>
+            <option value="Accesorios">🦮 Accesorios & Correas</option>
+            <option value="Salud">💊 Farmacia & Cuidado</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-1">
+            <label>Precio ($) *</label>
+            <input type="number" id="editProdPrice" required min="1">
+          </div>
+          <div class="form-group col-1">
+            <label>Stock *</label>
+            <input type="number" id="editProdStock" required min="0">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Marca o Fabricante</label>
+          <input type="text" id="editProdBrand" placeholder="Ej. Royal Canin, Kong, etc.">
+        </div>
+
+        <div class="form-group">
+          <label>📁 Cambiar Imagen desde tu PC 💻</label>
+          <input type="file" id="editProdImageFile" accept="image/*">
+          <div id="editProdPreview" class="image-upload-preview" style="display: none;"></div>
+        </div>
+
+        <div class="form-group">
+          <label>O Enlace Web de Imagen / Emoji</label>
+          <input type="text" id="editProdImage" placeholder="Ej. https://images.unsplash.com/... o 🐶, 🍖">
+        </div>
+
+        <div class="form-group">
+          <label>Descripción detallada</label>
+          <textarea id="editProdDesc" rows="3" placeholder="Detalles, nutrientes, medidas y beneficios..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="editProdFeatured">
+            ⭐ Mostrar en el Carrusel de la Tienda Principal
+          </label>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 16px;">
+          <button type="button" class="btn btn-secondary" id="cancelEditProductBtn" style="flex: 1;">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="saveEditProductBtn" style="flex: 2;">Guardar Cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Detalle del Producto (Para Compradores y Visitantes) -->
+  <div id="productDetailModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card modal-detail-card">
+      <div class="modal-header">
+        <div>
+          <h3>🐾 Detalle del Producto</h3>
+          <span class="role-badge role-comprador" id="detailProdCategoryTag">Alimentos</span>
+        </div>
+        <button class="modal-close-btn" id="closeDetailModalBtn">&times;</button>
+      </div>
+
+      <div class="product-detail-layout">
+        <!-- Columna Imagen -->
+        <div class="detail-media-col">
+          <div class="detail-img-box" id="detailImgBox">
+            <!-- Imagen inyectada por JS -->
+          </div>
+          <div class="detail-badges-row">
+            <span class="trust-badge">⚡ Envío Pet Express</span>
+            <span class="trust-badge">🛡️ Garantía Kira PET</span>
+          </div>
+        </div>
+
+        <!-- Columna Información -->
+        <div class="detail-info-col">
+          <span class="detail-brand" id="detailProdBrand">Kira Pet Oficial</span>
+          <h2 class="detail-title" id="detailProdTitle">Nombre del Producto</h2>
+
+          <div class="detail-price-box">
+            <span class="detail-price" id="detailProdPrice">$ 0</span>
+            <span class="detail-stock-badge" id="detailProdStockBadge">Stock disponible</span>
+          </div>
+
+          <div class="detail-desc-box">
+            <h4>Descripción y Beneficios:</h4>
+            <p id="detailProdDescText">Detalles del producto...</p>
+          </div>
+
+          <div class="detail-features-list">
+            <div class="feature-item">
+              <span class="feat-icon">🚚</span>
+              <div>
+                <strong>Envío Pet Express rápido</strong>
+                <small>Recíbelo de forma segura en tu domicilio</small>
+              </div>
+            </div>
+            <div class="feature-item">
+              <span class="feat-icon">💳</span>
+              <div>
+                <strong>Todos los medios de pago</strong>
+                <small>Tarjetas de crédito, débito y transferencias</small>
+              </div>
+            </div>
+            <div class="feature-item">
+              <span class="feat-icon">🐾</span>
+              <div>
+                <strong>Calidad 100% garantizada</strong>
+                <small>Probado y recomendado para el bienestar animal</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Selector de cantidad y Agregar al Carrito -->
+          <div class="detail-action-row">
+            <div class="detail-qty-picker">
+              <button class="qty-btn" id="detailQtyMinus">-</button>
+              <span id="detailQtyVal">1</span>
+              <button class="qty-btn" id="detailQtyPlus">+</button>
+            </div>
+            <button class="btn btn-primary btn-add-detail-cart" id="detailAddCartBtn">
+              🛒 Agregar al Carrito
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Configuración de Tienda y Logo (ADMINISTRADOR) -->
+  <div id="storeSettingsModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h3>⚙️ Configuración de Tienda y Logo</h3>
+          <p class="modal-subtitle">Cambia el logo, nombre y apariencia de Kira PET love en tiempo real</p>
+        </div>
+        <button class="modal-close-btn" id="closeStoreSettingsBtn">&times;</button>
+      </div>
+
+      <form id="storeSettingsForm">
+        <div style="text-align: center; margin-bottom: 16px;">
+          <label style="font-size: 0.85rem; font-weight: 700; color: #334155; display: block; margin-bottom: 6px;">Logo Actual</label>
+          <div id="storeLogoPreviewBox" class="logo-preview-box">
+            <span id="storeLogoPreviewIcon" style="font-size: 2.8rem;">🐾</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>📁 Subir Logo desde tu PC 💻</label>
+          <input type="file" id="storeLogoFileInput" accept="image/*">
+          <small style="color: #64748b; font-size: 0.8rem; display: block; margin-top: 3px;">
+            Elige una imagen desde tu computadora (PNG, JPG, SVG, WebP).
+          </small>
+        </div>
+
+        <div class="form-group">
+          <label>O ingresa un Link de Imagen Web o Emoji</label>
+          <input type="text" id="storeLogoUrlInput" placeholder="Ej. https://... o un emoji como 🐾, 🐶, 🐱">
+        </div>
+
+        <div class="form-group">
+          <label>Nombre de la Tienda *</label>
+          <input type="text" id="storeNameInput" value="Kira PET love" required>
+        </div>
+
+        <div class="form-group">
+          <label>Slogan o Subtítulo *</label>
+          <input type="text" id="storeSubInput" value="Tu Pet Shop Online" required>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 18px;">
+          <button type="button" class="btn btn-secondary" id="cancelStoreSettingsBtn" style="flex: 1;">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="saveStoreSettingsBtn" style="flex: 2;">Guardar Tienda</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/firebase-config.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
