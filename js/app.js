@@ -656,7 +656,7 @@ function aplicarAjustesTienda(data) {
   if (headerLogoIcon) {
     const isUrl = logo.startsWith("http://") || logo.startsWith("https://") || logo.startsWith("data:image");
     if (isUrl) {
-      headerLogoIcon.innerHTML = `<img src="${escapeHtml(logo)}" alt="Logo" style="width:100%; height:100%; object-fit:contain; border-radius:6px;">`;
+      headerLogoIcon.innerHTML = `<img src="${escapeHtml(logo)}" alt="Logo" class="logo-icon-img" style="width:100%; height:100%; max-width:100%; max-height:100%; object-fit:contain; display:block;">`;
     } else {
       headerLogoIcon.textContent = logo;
     }
@@ -681,7 +681,7 @@ if (storeLogoFileInput) {
       leerArchivoComoDataURL(e.target.files[0], (dataUrl) => {
         storeLogoBase64 = dataUrl;
         if (storeLogoPreviewBox) {
-          storeLogoPreviewBox.innerHTML = `<img src="${dataUrl}" alt="Logo Preview">`;
+          storeLogoPreviewBox.innerHTML = `<img src="${dataUrl}" alt="Logo Preview" style="width:100%; height:100%; max-width:100%; max-height:100%; object-fit:contain; display:block;">`;
         }
       });
     }
