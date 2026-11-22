@@ -256,18 +256,71 @@ function renderizarPreviewGaleriaEditar() {
   });
 }
 
-// Helper para leer archivos de imagen desde PC
-function leerArchivoComoDataURL(file, callback) {
+// Helper para leer y comprimir imágenes automáticamente en el navegador
+// (Evita exceder el límite estricto de 1MB por documento de Firestore)
+function leerYComprimirImagen(file, callback, maxDimension = 800, quality = 0.70) {
   if (!file) return;
-  if (!file.type.startsWith("image/")) {
+  if (!file.type || !file.type.startsWith("image/")) {
     showToast("⚠️ Por favor selecciona un archivo de imagen válido");
     return;
   }
+
   const reader = new FileReader();
   reader.onload = function(e) {
-    callback(e.target.result);
+    const img = new Image();
+    img.onload = function() {
+      let width = img.width;
+      let height = img.height;
+
+      // Escalar proporcionalmente si supera la dimensión máxima
+      if (width > maxDimension || height > maxDimension) {
+        if (width > height) {
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
+        } else {
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
+        }
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+
+      // Fondo blanco suave para evitar fondos negros en caso de PNGs con transparencia al guardar en JPEG
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Comprimir a JPEG optimizado (reduce fotos de 5MB a ~50KB con excelente nitidez)
+      let dataUrl = canvas.toDataURL("image/jpeg", quality);
+
+      // Si por alguna razón excede 160KB (fotos muy complejas), recomprimir a calidad menor
+      if (dataUrl.length > 170000) {
+        dataUrl = canvas.toDataURL("image/jpeg", 0.52);
+      }
+
+      callback(dataUrl);
+    };
+
+    img.onerror = function() {
+      showToast("❌ No se pudo procesar la imagen seleccionada");
+    };
+
+    img.src = e.target.result;
   };
+
+  reader.onerror = function() {
+    showToast("❌ Error al leer el archivo");
+  };
+
   reader.readAsDataURL(file);
+}
+
+// Alias para compatibilidad global
+function leerArchivoComoDataURL(file, callback, maxDimension = 800) {
+  leerYComprimirImagen(file, callback, maxDimension);
 }
 
 // Helper para renderizar imagen web o emoji
@@ -900,12 +953,12 @@ function aplicarAjustesTienda(data) {
 if (storeLogoFileInput) {
   storeLogoFileInput.addEventListener("change", (e) => {
     if (e.target.files && e.target.files[0]) {
-      leerArchivoComoDataURL(e.target.files[0], (dataUrl) => {
+      leerYComprimirImagen(e.target.files[0], (dataUrl) => {
         storeLogoBase64 = dataUrl;
         if (storeLogoPreviewBox) {
           storeLogoPreviewBox.innerHTML = `<img src="${dataUrl}" alt="Logo Preview" style="width:100%; height:100%; max-width:100%; max-height:100%; object-fit:contain; display:block;">`;
         }
-      });
+      }, 300, 0.85);
     }
   });
 }
@@ -961,12 +1014,12 @@ if (prodImageFilesInput) {
         showToast("⚠️ Máximo 5 fotos por publicación");
         break;
       }
-      leerArchivoComoDataURL(file, (dataUrl) => {
+      leerYComprimirImagen(file, (dataUrl) => {
         if (newProductImages.length < 5) {
           newProductImages.push(dataUrl);
           renderizarPreviewGaleriaNuevo();
         }
-      });
+      }, 800, 0.70);
     }
     prodImageFilesInput.value = "";
   });
@@ -1001,12 +1054,12 @@ if (editProdImageFilesInput) {
         showToast("⚠️ Máximo 5 fotos por publicación");
         break;
       }
-      leerArchivoComoDataURL(file, (dataUrl) => {
+      leerYComprimirImagen(file, (dataUrl) => {
         if (editProductImages.length < 5) {
           editProductImages.push(dataUrl);
           renderizarPreviewGaleriaEditar();
         }
-      });
+      }, 800, 0.70);
     }
     editProdImageFilesInput.value = "";
   });
@@ -1216,7 +1269,11 @@ authRegisterForm.addEventListener("submit", async (e) => {
     authRegisterForm.reset();
     showToast(`🎉 ¡Bienvenido/a a Kira PET love, ${nombre}! Ya podés comprar.`);
   } catch (err) {
-    showToast(`❌ Error: ${err.message}`);
+    if (err.message && err.message.includes("exceeds the maximum allowed size")) {
+      showToast("❌ Las fotos superan el límite de 1MB de Firebase. Sube menos fotos o fotos más ligeras.");
+    } else {
+      showToast(`❌ Error: ${err.message}`);
+    }
   } finally {
     btn.disabled = false;
     btn.textContent = "Registrarme";
@@ -1273,7 +1330,11 @@ authLoginForm.addEventListener("submit", async (e) => {
       mostrarMisProductos();
     }
   } catch (err) {
-    showToast(`❌ Error: ${err.message}`);
+    if (err.message && err.message.includes("exceeds the maximum allowed size")) {
+      showToast("❌ Las fotos superan el límite de 1MB de Firebase. Sube menos fotos o fotos más ligeras.");
+    } else {
+      showToast(`❌ Error: ${err.message}`);
+    }
   } finally {
     btn.disabled = false;
     btn.textContent = "Ingresar";
@@ -1403,7 +1464,11 @@ newProductForm.addEventListener("submit", async (e) => {
     if (prodImageFilesInput) prodImageFilesInput.value = "";
     if (prodImageUrlInput) prodImageUrlInput.value = "";
   } catch (err) {
-    showToast(`❌ Error: ${err.message}`);
+    if (err.message && err.message.includes("exceeds the maximum allowed size")) {
+      showToast("❌ Las fotos superan el límite de 1MB de Firebase. Sube menos fotos o fotos más ligeras.");
+    } else {
+      showToast(`❌ Error: ${err.message}`);
+    }
   }
 });
 
@@ -1826,7 +1891,11 @@ checkoutBtn.addEventListener("click", async () => {
     guardarCarrito();
     cartModal.style.display = "none";
   } catch (err) {
-    showToast(`❌ Error: ${err.message}`);
+    if (err.message && err.message.includes("exceeds the maximum allowed size")) {
+      showToast("❌ Las fotos superan el límite de 1MB de Firebase. Sube menos fotos o fotos más ligeras.");
+    } else {
+      showToast(`❌ Error: ${err.message}`);
+    }
   } finally {
     checkoutBtn.disabled = false;
     checkoutBtn.textContent = "Confirmar Compra";
