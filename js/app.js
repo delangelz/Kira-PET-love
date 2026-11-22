@@ -164,13 +164,97 @@ const carouselDots = document.getElementById("carouselDots");
 let carouselIndex = 0;
 let carouselAutoPlayTimer = null;
 
-// Subida de imagen desde PC (Base64)
-let newProductBase64Image = "";
-let editProductBase64Image = "";
-const prodImageFileInput = document.getElementById("prodImageFile");
-const newProdPreview = document.getElementById("newProdPreview");
-const editProdImageFileInput = document.getElementById("editProdImageFile");
-const editProdPreview = document.getElementById("editProdPreview");
+// Subida multi-imagen (hasta 5 fotos por producto)
+let newProductImages = [];
+let editProductImages = [];
+
+// Detalle de producto y galería
+let currentDetailImages = [];
+let currentDetailImgIndex = 0;
+
+// Lightbox visor de imagen ampliada a pantalla completa
+let lightboxCurrentIndex = 0;
+const imageLightboxModal = document.getElementById("imageLightboxModal");
+const closeLightboxBtn = document.getElementById("closeLightboxBtn");
+const lightboxPrevBtn = document.getElementById("lightboxPrevBtn");
+const lightboxNextBtn = document.getElementById("lightboxNextBtn");
+const lightboxMediaContainer = document.getElementById("lightboxMediaContainer");
+const lightboxProductTitle = document.getElementById("lightboxProductTitle");
+const lightboxCounter = document.getElementById("lightboxCounter");
+
+const detailThumbnailsStrip = document.getElementById("detailThumbnailsStrip");
+
+// Elementos de formulario Nuevo Producto
+const prodImageFilesInput = document.getElementById("prodImageFiles");
+const prodImageUrlInput = document.getElementById("prodImageUrlInput");
+const btnAddImageUrlBtn = document.getElementById("btnAddImageUrlBtn");
+const newProdGalleryPreview = document.getElementById("newProdGalleryPreview");
+const newProdImgCountBadge = document.getElementById("newProdImgCountBadge");
+
+// Elementos de formulario Editar Producto
+const editProdImageFilesInput = document.getElementById("editProdImageFiles");
+const editProdImageUrlInput = document.getElementById("editProdImageUrlInput");
+const btnEditAddImageUrlBtn = document.getElementById("btnEditAddImageUrlBtn");
+const editProdGalleryPreview = document.getElementById("editProdGalleryPreview");
+const editProdImgCountBadge = document.getElementById("editProdImgCountBadge");
+
+function renderizarPreviewGaleriaNuevo() {
+  if (!newProdGalleryPreview) return;
+  newProdGalleryPreview.innerHTML = "";
+
+  if (newProdImgCountBadge) {
+    newProdImgCountBadge.textContent = `${newProductImages.length} / 5 agregadas`;
+    newProdImgCountBadge.style.color = newProductImages.length > 0 ? "#0f766e" : "#64748b";
+  }
+
+  newProductImages.forEach((imgSrc, idx) => {
+    const item = document.createElement("div");
+    item.className = "gallery-preview-item";
+    const mediaHtml = getProductMediaHtml(imgSrc, `Foto ${idx + 1}`);
+    item.innerHTML = `
+      ${mediaHtml}
+      ${idx === 0 ? '<span class="badge-main-img">Portada</span>' : ''}
+      <button type="button" class="btn-remove-thumb" data-idx="${idx}" title="Eliminar foto">&times;</button>
+    `;
+
+    item.querySelector(".btn-remove-thumb").addEventListener("click", (e) => {
+      e.stopPropagation();
+      newProductImages.splice(idx, 1);
+      renderizarPreviewGaleriaNuevo();
+    });
+
+    newProdGalleryPreview.appendChild(item);
+  });
+}
+
+function renderizarPreviewGaleriaEditar() {
+  if (!editProdGalleryPreview) return;
+  editProdGalleryPreview.innerHTML = "";
+
+  if (editProdImgCountBadge) {
+    editProdImgCountBadge.textContent = `${editProductImages.length} / 5 agregadas`;
+    editProdImgCountBadge.style.color = editProductImages.length > 0 ? "#0f766e" : "#64748b";
+  }
+
+  editProductImages.forEach((imgSrc, idx) => {
+    const item = document.createElement("div");
+    item.className = "gallery-preview-item";
+    const mediaHtml = getProductMediaHtml(imgSrc, `Foto ${idx + 1}`);
+    item.innerHTML = `
+      ${mediaHtml}
+      ${idx === 0 ? '<span class="badge-main-img">Portada</span>' : ''}
+      <button type="button" class="btn-remove-thumb" data-idx="${idx}" title="Eliminar foto">&times;</button>
+    `;
+
+    item.querySelector(".btn-remove-thumb").addEventListener("click", (e) => {
+      e.stopPropagation();
+      editProductImages.splice(idx, 1);
+      renderizarPreviewGaleriaEditar();
+    });
+
+    editProdGalleryPreview.appendChild(item);
+  });
+}
 
 // Helper para leer archivos de imagen desde PC
 function leerArchivoComoDataURL(file, callback) {
@@ -342,7 +426,11 @@ function iniciarEscuchaProductosEnVivo() {
 
     storeProducts = [];
     snapshot.forEach((doc) => {
-      storeProducts.push({ id: doc.id, ...doc.data() });
+      const data = doc.data();
+      const imagenes = Array.isArray(data.imagenes) && data.imagenes.length > 0
+        ? data.imagenes
+        : [data.imagen || data.emoji || "🐾"];
+      storeProducts.push({ id: doc.id, ...data, imagenes });
     });
 
     renderizarCatalogo();
@@ -561,12 +649,18 @@ window.addEventListener("resize", () => {
 });
 
 // ==============================================================
-// 4.2 MODAL DETALLE DE PRODUCTO PARA COMPRADORES
+// 4.2 MODAL DETALLE DE PRODUCTO PARA COMPRADORES & GALERÍA MULTI-IMAGEN
 // ==============================================================
 function abrirDetalleProducto(prod) {
   if (!prod) return;
   currentDetailProduct = prod;
   currentDetailQty = 1;
+
+  // Extraer array de hasta 5 imágenes del producto
+  currentDetailImages = Array.isArray(prod.imagenes) && prod.imagenes.length > 0
+    ? prod.imagenes
+    : [prod.imagen || prod.emoji || "🐾"];
+  currentDetailImgIndex = 0;
 
   if (detailProdCategoryTag) detailProdCategoryTag.textContent = prod.categoria || "Mascotas";
   if (detailProdBrand) detailProdBrand.textContent = prod.marca || (prod.vendedorNombre || "Kira Pet Oficial");
@@ -578,13 +672,141 @@ function abrirDetalleProducto(prod) {
   if (detailProdDescText) {
     detailProdDescText.textContent = prod.descripcion || "Producto seleccionado especialmente para el bienestar y cuidado de tu mascota con los más altos estándares de calidad.";
   }
-  if (detailImgBox) {
-    detailImgBox.innerHTML = getProductMediaHtml(prod.imagen || prod.emoji, prod.titulo);
-  }
-  if (detailQtyVal) detailQtyVal.textContent = "1";
 
+  actualizarImagenPrincipalDetalle(0);
+  renderizarMiniaturasDetalle();
+
+  if (detailQtyVal) detailQtyVal.textContent = "1";
   if (productDetailModal) productDetailModal.style.display = "flex";
 }
+
+function actualizarImagenPrincipalDetalle(idx) {
+  currentDetailImgIndex = idx;
+  if (detailImgBox && currentDetailImages[idx]) {
+    detailImgBox.innerHTML = `
+      ${getProductMediaHtml(currentDetailImages[idx], currentDetailProduct.titulo)}
+      <span class="detail-zoom-badge">🔍 Haz clic para ampliar</span>
+    `;
+  }
+
+  // Marcar activa la miniatura correspondiente
+  if (detailThumbnailsStrip) {
+    const thumbs = detailThumbnailsStrip.querySelectorAll(".detail-thumb-item");
+    thumbs.forEach((th, i) => {
+      th.classList.toggle("active", i === idx);
+    });
+  }
+}
+
+function renderizarMiniaturasDetalle() {
+  if (!detailThumbnailsStrip) return;
+  detailThumbnailsStrip.innerHTML = "";
+
+  if (currentDetailImages.length <= 1) {
+    detailThumbnailsStrip.style.display = "none";
+    return;
+  }
+  detailThumbnailsStrip.style.display = "flex";
+
+  currentDetailImages.forEach((imgSrc, idx) => {
+    const thumb = document.createElement("div");
+    thumb.className = `detail-thumb-item ${idx === currentDetailImgIndex ? 'active' : ''}`;
+    thumb.title = `Ver foto ${idx + 1}`;
+    thumb.innerHTML = getProductMediaHtml(imgSrc, `Foto ${idx + 1}`);
+
+    thumb.addEventListener("click", () => {
+      actualizarImagenPrincipalDetalle(idx);
+    });
+
+    detailThumbnailsStrip.appendChild(thumb);
+  });
+}
+
+// Abrir lightbox al hacer clic en la foto principal de detalle
+if (detailImgBox) {
+  detailImgBox.addEventListener("click", () => {
+    abrirLightbox(currentDetailImgIndex);
+  });
+}
+
+// Funciones del Visor Lightbox a Pantalla Completa
+function abrirLightbox(idx) {
+  if (!currentDetailImages || currentDetailImages.length === 0) return;
+  lightboxCurrentIndex = idx || 0;
+  actualizarContenidoLightbox();
+  if (imageLightboxModal) imageLightboxModal.style.display = "flex";
+}
+
+function cerrarLightbox() {
+  if (imageLightboxModal) imageLightboxModal.style.display = "none";
+}
+
+function actualizarContenidoLightbox() {
+  if (!lightboxMediaContainer) return;
+  const currentImg = currentDetailImages[lightboxCurrentIndex] || "🐾";
+  const isUrl = currentImg.startsWith("http://") || currentImg.startsWith("https://") || currentImg.startsWith("data:image");
+
+  if (isUrl) {
+    lightboxMediaContainer.innerHTML = `<img src="${escapeHtml(currentImg)}" alt="Foto ampliada" id="lightboxImgEl" title="Haz clic para alternar zoom">`;
+    const imgEl = document.getElementById("lightboxImgEl");
+    if (imgEl) {
+      imgEl.addEventListener("click", () => {
+        imgEl.classList.toggle("zoomed");
+      });
+    }
+  } else {
+    lightboxMediaContainer.innerHTML = `<span>${escapeHtml(currentImg)}</span>`;
+  }
+
+  if (lightboxCounter) {
+    lightboxCounter.textContent = `${lightboxCurrentIndex + 1} / ${currentDetailImages.length}`;
+  }
+  if (lightboxProductTitle && currentDetailProduct) {
+    lightboxProductTitle.textContent = currentDetailProduct.titulo;
+  }
+
+  const showNav = currentDetailImages.length > 1;
+  if (lightboxPrevBtn) lightboxPrevBtn.style.display = showNav ? "flex" : "none";
+  if (lightboxNextBtn) lightboxNextBtn.style.display = showNav ? "flex" : "none";
+}
+
+if (closeLightboxBtn) closeLightboxBtn.addEventListener("click", cerrarLightbox);
+if (imageLightboxModal) {
+  imageLightboxModal.addEventListener("click", (e) => {
+    if (e.target === imageLightboxModal) cerrarLightbox();
+  });
+}
+
+if (lightboxPrevBtn) {
+  lightboxPrevBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    lightboxCurrentIndex = (lightboxCurrentIndex - 1 + currentDetailImages.length) % currentDetailImages.length;
+    actualizarContenidoLightbox();
+  });
+}
+
+if (lightboxNextBtn) {
+  lightboxNextBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    lightboxCurrentIndex = (lightboxCurrentIndex + 1) % currentDetailImages.length;
+    actualizarContenidoLightbox();
+  });
+}
+
+// Navegación con teclado en Lightbox
+window.addEventListener("keydown", (e) => {
+  if (imageLightboxModal && imageLightboxModal.style.display === "flex") {
+    if (e.key === "Escape") {
+      cerrarLightbox();
+    } else if (e.key === "ArrowLeft" && currentDetailImages.length > 1) {
+      lightboxCurrentIndex = (lightboxCurrentIndex - 1 + currentDetailImages.length) % currentDetailImages.length;
+      actualizarContenidoLightbox();
+    } else if (e.key === "ArrowRight" && currentDetailImages.length > 1) {
+      lightboxCurrentIndex = (lightboxCurrentIndex + 1) % currentDetailImages.length;
+      actualizarContenidoLightbox();
+    }
+  }
+});
 
 if (closeDetailModalBtn) {
   closeDetailModalBtn.addEventListener("click", () => {
@@ -728,32 +950,83 @@ if (cancelStoreSettingsBtn) {
   });
 }
 
-// Listeners de subida de imagen de producto desde PC
-if (prodImageFileInput) {
-  prodImageFileInput.addEventListener("change", (e) => {
-    if (e.target.files && e.target.files[0]) {
-      leerArchivoComoDataURL(e.target.files[0], (dataUrl) => {
-        newProductBase64Image = dataUrl;
-        if (newProdPreview) {
-          newProdPreview.innerHTML = `<img src="${dataUrl}" class="image-preview-thumbnail" alt="Preview"><small style="display:block; color:#0f766e; font-weight:700;">Imagen cargada desde tu PC</small>`;
-          newProdPreview.style.display = "block";
+// Listeners de subida multi-imagen (hasta 5 fotos) para Nuevo Producto
+if (prodImageFilesInput) {
+  prodImageFilesInput.addEventListener("change", (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    for (const file of files) {
+      if (newProductImages.length >= 5) {
+        showToast("⚠️ Máximo 5 fotos por publicación");
+        break;
+      }
+      leerArchivoComoDataURL(file, (dataUrl) => {
+        if (newProductImages.length < 5) {
+          newProductImages.push(dataUrl);
+          renderizarPreviewGaleriaNuevo();
         }
       });
     }
+    prodImageFilesInput.value = "";
   });
 }
 
-if (editProdImageFileInput) {
-  editProdImageFileInput.addEventListener("change", (e) => {
-    if (e.target.files && e.target.files[0]) {
-      leerArchivoComoDataURL(e.target.files[0], (dataUrl) => {
-        editProductBase64Image = dataUrl;
-        if (editProdPreview) {
-          editProdPreview.innerHTML = `<img src="${dataUrl}" class="image-preview-thumbnail" alt="Preview"><small style="display:block; color:#0f766e; font-weight:700;">Nueva imagen cargada desde PC</small>`;
-          editProdPreview.style.display = "block";
+if (btnAddImageUrlBtn) {
+  btnAddImageUrlBtn.addEventListener("click", () => {
+    if (!prodImageUrlInput) return;
+    const val = prodImageUrlInput.value.trim();
+    if (!val) {
+      showToast("⚠️ Escribe un enlace web de imagen o un emoji");
+      return;
+    }
+    if (newProductImages.length >= 5) {
+      showToast("⚠️ Ya alcanzaste el límite de 5 fotos");
+      return;
+    }
+    newProductImages.push(val);
+    prodImageUrlInput.value = "";
+    renderizarPreviewGaleriaNuevo();
+  });
+}
+
+// Listeners de subida multi-imagen para Editar Producto
+if (editProdImageFilesInput) {
+  editProdImageFilesInput.addEventListener("change", (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    for (const file of files) {
+      if (editProductImages.length >= 5) {
+        showToast("⚠️ Máximo 5 fotos por publicación");
+        break;
+      }
+      leerArchivoComoDataURL(file, (dataUrl) => {
+        if (editProductImages.length < 5) {
+          editProductImages.push(dataUrl);
+          renderizarPreviewGaleriaEditar();
         }
       });
     }
+    editProdImageFilesInput.value = "";
+  });
+}
+
+if (btnEditAddImageUrlBtn) {
+  btnEditAddImageUrlBtn.addEventListener("click", () => {
+    if (!editProdImageUrlInput) return;
+    const val = editProdImageUrlInput.value.trim();
+    if (!val) {
+      showToast("⚠️ Escribe un enlace o un emoji");
+      return;
+    }
+    if (editProductImages.length >= 5) {
+      showToast("⚠️ Ya alcanzaste el límite de 5 fotos");
+      return;
+    }
+    editProductImages.push(val);
+    editProdImageUrlInput.value = "";
+    renderizarPreviewGaleriaEditar();
   });
 }
 
@@ -1093,12 +1366,18 @@ newProductForm.addEventListener("submit", async (e) => {
   const categoria = document.getElementById("prodCategory").value;
   const precio = Number(document.getElementById("prodPrice").value);
   const stock = Number(document.getElementById("prodStock").value);
-  const prodImgEl = document.getElementById("prodImage");
-  const imagenUrl = prodImgEl ? prodImgEl.value.trim() : "";
-  const imagen = newProductBase64Image || imagenUrl || "🐾";
   const descripcion = document.getElementById("prodDesc").value.trim();
   const prodFeaturedEl = document.getElementById("prodFeatured");
   const destacado = prodFeaturedEl ? prodFeaturedEl.checked : true;
+
+  // Si quedó texto pendiente en el input de URL, agregarlo si hay cupo
+  if (prodImageUrlInput && prodImageUrlInput.value.trim() && newProductImages.length < 5) {
+    newProductImages.push(prodImageUrlInput.value.trim());
+    prodImageUrlInput.value = "";
+  }
+
+  const imagenesFinales = newProductImages.length > 0 ? [...newProductImages] : ["🐾"];
+  const imagenPrincipal = imagenesFinales[0];
 
   try {
     await window.db.collection(PROD_COLLECTION).add({
@@ -1107,8 +1386,9 @@ newProductForm.addEventListener("submit", async (e) => {
       categoria,
       precio,
       stock,
-      imagen,
-      emoji: imagen,
+      imagenes: imagenesFinales,
+      imagen: imagenPrincipal,
+      emoji: imagenPrincipal,
       descripcion,
       destacado,
       vendedorId: currentUser.id || "admin",
@@ -1116,18 +1396,12 @@ newProductForm.addEventListener("submit", async (e) => {
       fechaCreacion: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    showToast(`✅ "${titulo}" publicado en la tienda en tiempo real`);
+    showToast(`✅ "${titulo}" publicado con ${imagenesFinales.length} foto(s)`);
     newProductForm.reset();
-    newProductBase64Image = "";
-    const previewEl = document.getElementById("newProdPreview");
-    if (previewEl) {
-      previewEl.style.display = "none";
-      previewEl.innerHTML = "";
-    }
-    if (prodImgEl) prodImgEl.value = "🐾";
-    if (document.getElementById("prodImageFile")) {
-      document.getElementById("prodImageFile").value = "";
-    }
+    newProductImages = [];
+    renderizarPreviewGaleriaNuevo();
+    if (prodImageFilesInput) prodImageFilesInput.value = "";
+    if (prodImageUrlInput) prodImageUrlInput.value = "";
   } catch (err) {
     showToast(`❌ Error: ${err.message}`);
   }
@@ -1229,27 +1503,18 @@ function renderizarTablaAdminProductos() {
       editProdCategory.value = prod.categoria || "Alimentos";
       editProdPrice.value = prod.precio || 0;
       editProdStock.value = prod.stock || 0;
-      editProdImage.value = prod.imagen || prod.emoji || "";
       editProdDesc.value = prod.descripcion || "";
       const editFeaturedEl = document.getElementById("editProdFeatured");
       if (editFeaturedEl) editFeaturedEl.checked = (prod.destacado !== false);
 
-      // Mostrar previsualización de la imagen actual
-      editProductBase64Image = "";
-      const currentMedia = prod.imagen || prod.emoji || "";
-      const isMediaUrl = currentMedia.startsWith("data:image") || currentMedia.startsWith("http://") || currentMedia.startsWith("https://");
-      if (editProdPreview) {
-        if (isMediaUrl) {
-          editProdPreview.innerHTML = `<img src="${currentMedia}" class="image-preview-thumbnail" alt="Preview"><small style="display:block; color:#64748b;">Imagen actual del producto</small>`;
-          editProdPreview.style.display = "block";
-        } else {
-          editProdPreview.style.display = "none";
-          editProdPreview.innerHTML = "";
-        }
-      }
-      if (editProdImageFileInput) {
-        editProdImageFileInput.value = "";
-      }
+      // Cargar imágenes existentes (hasta 5)
+      editProductImages = Array.isArray(prod.imagenes) && prod.imagenes.length > 0
+        ? [...prod.imagenes]
+        : [prod.imagen || prod.emoji || "🐾"];
+      renderizarPreviewGaleriaEditar();
+
+      if (editProdImageFilesInput) editProdImageFilesInput.value = "";
+      if (editProdImageUrlInput) editProdImageUrlInput.value = "";
 
       editProductModal.style.display = "flex";
     });
@@ -1285,11 +1550,18 @@ if (editProductForm) {
     const categoria = editProdCategory.value;
     const precio = Number(editProdPrice.value);
     const stock = Number(editProdStock.value);
-    const imagenIngresada = editProdImage.value.trim();
-    const imagen = editProductBase64Image || imagenIngresada || "🐾";
     const descripcion = editProdDesc.value.trim();
     const editFeaturedEl = document.getElementById("editProdFeatured");
     const destacado = editFeaturedEl ? editFeaturedEl.checked : true;
+
+    // Si escribió algo en el input de URL en edición sin presionar el botón añadir
+    if (editProdImageUrlInput && editProdImageUrlInput.value.trim() && editProductImages.length < 5) {
+      editProductImages.push(editProdImageUrlInput.value.trim());
+      editProdImageUrlInput.value = "";
+    }
+
+    const imagenesFinales = editProductImages.length > 0 ? [...editProductImages] : ["🐾"];
+    const imagenPrincipal = imagenesFinales[0];
 
     try {
       await window.db.collection(PROD_COLLECTION).doc(id).update({
@@ -1298,14 +1570,15 @@ if (editProductForm) {
         categoria,
         precio,
         stock,
-        imagen,
-        emoji: imagen,
+        imagenes: imagenesFinales,
+        imagen: imagenPrincipal,
+        emoji: imagenPrincipal,
         descripcion,
         destacado
       });
-      showToast(`✅ "${titulo}" actualizado con éxito en tiempo real`);
+      showToast(`✅ "${titulo}" actualizado con ${imagenesFinales.length} foto(s)`);
       editProductModal.style.display = "none";
-      editProductBase64Image = "";
+      editProductImages = [];
     } catch (err) {
       showToast(`❌ Error: ${err.message}`);
     }

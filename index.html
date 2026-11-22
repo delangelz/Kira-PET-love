@@ -227,17 +227,30 @@
             <input type="text" id="prodBrand" placeholder="Ej. Royal Canin, Kong, Pedigree" value="Kira Pet Oficial">
           </div>
 
+          <!-- Sección de Imágenes del Producto (Hasta 5 imágenes) -->
           <div class="form-group">
-            <label>📁 Subir Imagen desde tu PC 💻</label>
-            <input type="file" id="prodImageFile" accept="image/*">
-            <div id="newProdPreview" class="image-upload-preview" style="display: none;"></div>
-          </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <label style="margin-bottom:0;">📸 Fotos del Producto (Hasta 5 fotos) *</label>
+              <span id="newProdImgCountBadge" class="img-count-badge">0 / 5 agregadas</span>
+            </div>
+            
+            <div style="display:flex; gap:8px; margin-bottom:8px;">
+              <label for="prodImageFiles" class="btn btn-secondary btn-sm" style="flex:1; cursor:pointer; text-align:center; padding:9px;">
+                📁 Subir Fotos desde tu PC (hasta 5)
+              </label>
+              <input type="file" id="prodImageFiles" accept="image/*" multiple style="display:none;">
+            </div>
 
-          <div class="form-group">
-            <label>O Enlace Web de Imagen / Emoji</label>
-            <input type="text" id="prodImage" placeholder="Ej. https://images.unsplash.com/... o 🐶, 🍖" value="🐾">
-            <small style="color: #64748b; font-size: 0.8rem; display: block; margin-top: 3px;">
-              Puedes subir un archivo desde tu PC o pegar un link de imagen de internet.
+            <!-- O agregar por URL / emoji -->
+            <div style="display:flex; gap:6px;">
+              <input type="text" id="prodImageUrlInput" placeholder="O pega link web o emoji (ej. 🍖, https://...)" style="flex:1;">
+              <button type="button" class="btn btn-sm btn-secondary" id="btnAddImageUrlBtn">➕ Añadir</button>
+            </div>
+
+            <!-- Galería de previsualización con botón de eliminar individual -->
+            <div id="newProdGalleryPreview" class="gallery-preview-grid"></div>
+            <small style="color:#64748b; font-size:0.78rem; display:block; margin-top:4px;">
+              La primera foto será la portada en el catálogo y carrusel.
             </small>
           </div>
 
@@ -596,15 +609,30 @@
           <input type="text" id="editProdBrand" placeholder="Ej. Royal Canin, Kong, etc.">
         </div>
 
+        <!-- Sección de Imágenes del Producto (Hasta 5 imágenes) -->
         <div class="form-group">
-          <label>📁 Cambiar Imagen desde tu PC 💻</label>
-          <input type="file" id="editProdImageFile" accept="image/*">
-          <div id="editProdPreview" class="image-upload-preview" style="display: none;"></div>
-        </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <label style="margin-bottom:0;">📸 Fotos del Producto (Hasta 5 fotos) *</label>
+            <span id="editProdImgCountBadge" class="img-count-badge">0 / 5 agregadas</span>
+          </div>
 
-        <div class="form-group">
-          <label>O Enlace Web de Imagen / Emoji</label>
-          <input type="text" id="editProdImage" placeholder="Ej. https://images.unsplash.com/... o 🐶, 🍖">
+          <div style="display:flex; gap:8px; margin-bottom:8px;">
+            <label for="editProdImageFiles" class="btn btn-secondary btn-sm" style="flex:1; cursor:pointer; text-align:center; padding:9px;">
+              📁 Subir Fotos desde tu PC
+            </label>
+            <input type="file" id="editProdImageFiles" accept="image/*" multiple style="display:none;">
+          </div>
+
+          <div style="display:flex; gap:6px;">
+            <input type="text" id="editProdImageUrlInput" placeholder="O pega link web o emoji..." style="flex:1;">
+            <button type="button" class="btn btn-sm btn-secondary" id="btnEditAddImageUrlBtn">➕ Añadir</button>
+          </div>
+
+          <!-- Galería de imágenes existentes / nuevas con botón ✕ -->
+          <div id="editProdGalleryPreview" class="gallery-preview-grid"></div>
+          <small style="color:#64748b; font-size:0.78rem; display:block; margin-top:4px;">
+            Usa la ✕ para quitar fotos o sube nuevas (máx. 5 fotos).
+          </small>
         </div>
 
         <div class="form-group">
@@ -641,9 +669,11 @@
       <div class="product-detail-layout">
         <!-- Columna Imagen -->
         <div class="detail-media-col">
-          <div class="detail-img-box" id="detailImgBox">
+          <div class="detail-img-box" id="detailImgBox" title="Haz clic para ampliar la imagen">
             <!-- Imagen inyectada por JS -->
           </div>
+          <!-- Carrusel de miniaturas si tiene múltiples imágenes -->
+          <div class="detail-thumbnails-strip" id="detailThumbnailsStrip"></div>
           <div class="detail-badges-row">
             <span class="trust-badge">⚡ Envío Pet Express</span>
             <span class="trust-badge">🛡️ Garantía Kira PET</span>
@@ -753,6 +783,25 @@
         </div>
       </form>
     </div>
+  </div>
+
+  <!-- Modal Lightbox para expandir la imagen en pantalla completa -->
+  <div id="imageLightboxModal" class="lightbox-backdrop" style="display: none;">
+    <button class="lightbox-close-btn" id="closeLightboxBtn" aria-label="Cerrar">&times;</button>
+    <button class="lightbox-nav-btn prev" id="lightboxPrevBtn" aria-label="Anterior">❮</button>
+    <div class="lightbox-content-box">
+      <div id="lightboxMediaContainer" class="lightbox-media-container">
+        <!-- Imagen expandida inyectada por JS -->
+      </div>
+      <div class="lightbox-caption">
+        <span id="lightboxProductTitle">Producto</span>
+        <span class="lightbox-counter" id="lightboxCounter">1 / 1</span>
+      </div>
+      <div style="color: #94a3b8; font-size: 0.75rem; margin-top: 4px;">
+        💡 Haz clic en la foto para hacer zoom / Usa las flechas ❮ ❯ del teclado para navegar
+      </div>
+    </div>
+    <button class="lightbox-nav-btn next" id="lightboxNextBtn" aria-label="Siguiente">❯</button>
   </div>
 
   <!-- Scripts -->
