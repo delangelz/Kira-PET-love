@@ -183,6 +183,84 @@ const lightboxProductTitle = document.getElementById("lightboxProductTitle");
 const lightboxCounter = document.getElementById("lightboxCounter");
 
 const detailThumbnailsStrip = document.getElementById("detailThumbnailsStrip");
+const detailProdIdBadge = document.getElementById("detailProdIdBadge");
+const detailCopyIdBtn = document.getElementById("detailCopyIdBtn");
+
+// Modal Letrero de Publicación Exitosa
+const publishSuccessModal = document.getElementById("publishSuccessModal");
+const successProdImgBox = document.getElementById("successProdImgBox");
+const successProdCategory = document.getElementById("successProdCategory");
+const successProdFeaturedBadge = document.getElementById("successProdFeaturedBadge");
+const successProdTitle = document.getElementById("successProdTitle");
+const successProdPrice = document.getElementById("successProdPrice");
+const successProdId = document.getElementById("successProdId");
+const successCopyIdBtn = document.getElementById("successCopyIdBtn");
+const successGoToStoreBtn = document.getElementById("successGoToStoreBtn");
+const successPublishAnotherBtn = document.getElementById("successPublishAnotherBtn");
+const successViewInAdminBtn = document.getElementById("successViewInAdminBtn");
+
+// Modal Editor y Recortador de Imagen (Canvas Cropper)
+const imageCropperModal = document.getElementById("imageCropperModal");
+const closeCropperBtn = document.getElementById("closeCropperBtn");
+const cropperCancelBtn = document.getElementById("cropperCancelBtn");
+const cropperApplyBtn = document.getElementById("cropperApplyBtn");
+const cropperCanvas = document.getElementById("cropperCanvas");
+const cropperZoomRange = document.getElementById("cropperZoomRange");
+const cropperZoomValue = document.getElementById("cropperZoomValue");
+const cropperZoomInBtn = document.getElementById("cropperZoomInBtn");
+const cropperZoomOutBtn = document.getElementById("cropperZoomOutBtn");
+const cropperRatioSquare = document.getElementById("cropperRatioSquare");
+const cropperRatio43 = document.getElementById("cropperRatio43");
+const cropperRatioFree = document.getElementById("cropperRatioFree");
+const cropperRotateLeftBtn = document.getElementById("cropperRotateLeftBtn");
+const cropperRotateRightBtn = document.getElementById("cropperRotateRightBtn");
+const cropperResetBtn = document.getElementById("cropperResetBtn");
+
+// Estado del Editor de Recorte
+let cropperImage = null;
+let cropperTargetArray = null;
+let cropperTargetIndex = -1;
+let cropperOnComplete = null;
+let cropperZoom = 1.0;
+let cropperRotation = 0;
+let cropperPanX = 0;
+let cropperPanY = 0;
+let cropperAspectRatio = "1:1";
+let isDraggingCropper = false;
+let dragStartMouseX = 0;
+let dragStartMouseY = 0;
+let dragStartPanX = 0;
+let dragStartPanY = 0;
+let isSubmittingNewProduct = false;
+
+// Helper global para copiar texto al portapapeles
+function copiarTextoPortapapeles(texto, mensajeExito = "📋 Copiado al portapapeles") {
+  if (!texto) return;
+  const textoLimpio = String(texto).replace(/^#/, "").trim();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(textoLimpio)
+      .then(() => showToast(`${mensajeExito}: ${textoLimpio}`))
+      .catch(() => fallbackCopiar(textoLimpio, mensajeExito));
+  } else {
+    fallbackCopiar(textoLimpio, mensajeExito);
+  }
+}
+
+function fallbackCopiar(texto, mensajeExito) {
+  try {
+    const temp = document.createElement("textarea");
+    temp.value = texto;
+    temp.style.position = "fixed";
+    temp.style.opacity = "0";
+    document.body.appendChild(temp);
+    temp.select();
+    document.execCommand("copy");
+    document.body.removeChild(temp);
+    showToast(`${mensajeExito}: ${texto}`);
+  } catch (e) {
+    prompt("Copia este ID manualmente:", texto);
+  }
+}
 
 // Elementos de formulario Nuevo Producto
 const prodImageFilesInput = document.getElementById("prodImageFiles");
@@ -214,8 +292,21 @@ function renderizarPreviewGaleriaNuevo() {
     item.innerHTML = `
       ${mediaHtml}
       ${idx === 0 ? '<span class="badge-main-img">Portada</span>' : ''}
+      <button type="button" class="btn-crop-thumb" data-idx="${idx}" title="✂️ Recortar y ubicar foto">✂️</button>
       <button type="button" class="btn-remove-thumb" data-idx="${idx}" title="Eliminar foto">&times;</button>
     `;
+
+    // Botón Recortar
+    item.querySelector(".btn-crop-thumb").addEventListener("click", (e) => {
+      e.stopPropagation();
+      abrirEditorRecorte(imgSrc, newProductImages, idx, renderizarPreviewGaleriaNuevo);
+    });
+
+    // Clic en la foto para abrir recortador directamente
+    item.addEventListener("click", (e) => {
+      if (e.target.closest(".btn-remove-thumb") || e.target.closest(".btn-crop-thumb")) return;
+      abrirEditorRecorte(imgSrc, newProductImages, idx, renderizarPreviewGaleriaNuevo);
+    });
 
     item.querySelector(".btn-remove-thumb").addEventListener("click", (e) => {
       e.stopPropagation();
@@ -243,8 +334,21 @@ function renderizarPreviewGaleriaEditar() {
     item.innerHTML = `
       ${mediaHtml}
       ${idx === 0 ? '<span class="badge-main-img">Portada</span>' : ''}
+      <button type="button" class="btn-crop-thumb" data-idx="${idx}" title="✂️ Recortar y ubicar foto">✂️</button>
       <button type="button" class="btn-remove-thumb" data-idx="${idx}" title="Eliminar foto">&times;</button>
     `;
+
+    // Botón Recortar
+    item.querySelector(".btn-crop-thumb").addEventListener("click", (e) => {
+      e.stopPropagation();
+      abrirEditorRecorte(imgSrc, editProductImages, idx, renderizarPreviewGaleriaEditar);
+    });
+
+    // Clic en la foto para abrir recortador directamente
+    item.addEventListener("click", (e) => {
+      if (e.target.closest(".btn-remove-thumb") || e.target.closest(".btn-crop-thumb")) return;
+      abrirEditorRecorte(imgSrc, editProductImages, idx, renderizarPreviewGaleriaEditar);
+    });
 
     item.querySelector(".btn-remove-thumb").addEventListener("click", (e) => {
       e.stopPropagation();
@@ -331,6 +435,417 @@ function getProductMediaHtml(imgOrEmoji, title) {
     return `<img src="${escapeHtml(val)}" alt="${escapeHtml(title || 'Producto')}" class="product-thumb-img" onerror="this.onerror=null; this.parentElement.innerHTML='🐾';">`;
   }
   return `<span>${escapeHtml(val)}</span>`;
+}
+
+// ==============================================================
+// MOTOR DE EDICIÓN Y RECORTE DE IMÁGENES (CANVAS CROPPER)
+// ==============================================================
+function abrirEditorRecorte(imgSrc, targetArray, targetIndex, onComplete) {
+  if (!imgSrc) return;
+  const val = String(imgSrc).trim();
+  const esUrlValida = val.startsWith("data:image") || val.startsWith("http://") || val.startsWith("https://");
+  
+  if (!esUrlValida) {
+    showToast("ℹ️ Los emojis no requieren recorte. Puedes recortar fotos subidas o enlaces.");
+    return;
+  }
+
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  img.onload = () => {
+    cropperImage = img;
+    cropperTargetArray = targetArray;
+    cropperTargetIndex = targetIndex;
+    cropperOnComplete = onComplete;
+    cropperZoom = 1.0;
+    cropperRotation = 0;
+    cropperPanX = 0;
+    cropperPanY = 0;
+    cropperAspectRatio = "1:1";
+
+    actualizarBotonesProporcionCropper("1:1");
+    actualizarZoomSlider(1.0);
+    dibujarCanvasCropper();
+
+    if (imageCropperModal) imageCropperModal.style.display = "flex";
+  };
+  img.onerror = () => {
+    showToast("❌ No se pudo cargar la imagen para editar");
+  };
+  img.src = val;
+}
+
+function getCropRect(cw, ch) {
+  if (cropperAspectRatio === "1:1") {
+    const size = Math.min(cw, ch) - 40;
+    return { x: (cw - size) / 2, y: (ch - size) / 2, w: size, h: size };
+  } else if (cropperAspectRatio === "4:3") {
+    let w = cw - 40;
+    let h = Math.round(w * (3 / 4));
+    if (h > ch - 40) {
+      h = ch - 40;
+      w = Math.round(h * (4 / 3));
+    }
+    return { x: (cw - w) / 2, y: (ch - h) / 2, w: w, h: h };
+  } else {
+    // Proporción libre
+    const w = cw - 30;
+    const h = ch - 30;
+    return { x: 15, y: 15, w: w, h: h };
+  }
+}
+
+function dibujarCanvasCropper() {
+  if (!cropperCanvas || !cropperImage) return;
+  const ctx = cropperCanvas.getContext("2d");
+  const cw = cropperCanvas.width;
+  const ch = cropperCanvas.height;
+
+  ctx.clearRect(0, 0, cw, ch);
+
+  // Fondo oscuro
+  ctx.fillStyle = "#090d16";
+  ctx.fillRect(0, 0, cw, ch);
+
+  const cropRect = getCropRect(cw, ch);
+
+  // 1. Dibujar la imagen con transformación de usuario (pan, rotación, zoom)
+  ctx.save();
+  ctx.translate(cw / 2 + cropperPanX, ch / 2 + cropperPanY);
+  ctx.rotate((cropperRotation * Math.PI) / 180);
+  ctx.scale(cropperZoom, cropperZoom);
+
+  // Ajuste inicial para cubrir el marco
+  const baseScale = Math.max(cropRect.w / cropperImage.width, cropRect.h / cropperImage.height);
+  const drawW = cropperImage.width * baseScale;
+  const drawH = cropperImage.height * baseScale;
+
+  ctx.drawImage(cropperImage, -drawW / 2, -drawH / 2, drawW, drawH);
+  ctx.restore();
+
+  // 2. Máscara oscura exterior al recuadro de recorte
+  ctx.save();
+  ctx.fillStyle = "rgba(10, 15, 29, 0.72)";
+  ctx.beginPath();
+  ctx.rect(0, 0, cw, ch);
+  ctx.rect(cropRect.x, cropRect.y, cropRect.w, cropRect.h);
+  ctx.fill("evenodd");
+
+  // 3. Borde del marco de recorte
+  ctx.strokeStyle = "#0f766e";
+  ctx.lineWidth = 2.5;
+  ctx.strokeRect(cropRect.x, cropRect.y, cropRect.w, cropRect.h);
+
+  // 4. Guías de tercios (Rule of Thirds)
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(cropRect.x + cropRect.w / 3, cropRect.y);
+  ctx.lineTo(cropRect.x + cropRect.w / 3, cropRect.y + cropRect.h);
+  ctx.moveTo(cropRect.x + (cropRect.w * 2) / 3, cropRect.y);
+  ctx.lineTo(cropRect.x + (cropRect.w * 2) / 3, cropRect.y + cropRect.h);
+  ctx.moveTo(cropRect.x, cropRect.y + cropRect.h / 3);
+  ctx.lineTo(cropRect.x + cropRect.w, cropRect.y + cropRect.h / 3);
+  ctx.moveTo(cropRect.x, cropRect.y + (cropRect.h * 2) / 3);
+  ctx.lineTo(cropRect.x + cropRect.w, cropRect.y + (cropRect.h * 2) / 3);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // 5. Esquinas reforzadas estilo visor profesional
+  ctx.strokeStyle = "#14b8a6";
+  ctx.lineWidth = 3.5;
+  const cLen = 14;
+  ctx.beginPath();
+  // Arriba-Izquierda
+  ctx.moveTo(cropRect.x, cropRect.y + cLen);
+  ctx.lineTo(cropRect.x, cropRect.y);
+  ctx.lineTo(cropRect.x + cLen, cropRect.y);
+  // Arriba-Derecha
+  ctx.moveTo(cropRect.x + cropRect.w - cLen, cropRect.y);
+  ctx.lineTo(cropRect.x + cropRect.w, cropRect.y);
+  ctx.lineTo(cropRect.x + cropRect.w, cropRect.y + cLen);
+  // Abajo-Izquierda
+  ctx.moveTo(cropRect.x, cropRect.y + cropRect.h - cLen);
+  ctx.lineTo(cropRect.x, cropRect.y + cropRect.h);
+  ctx.lineTo(cropRect.x + cLen, cropRect.y + cropRect.h);
+  // Abajo-Derecha
+  ctx.moveTo(cropRect.x + cropRect.w - cLen, cropRect.y + cropRect.h);
+  ctx.lineTo(cropRect.x + cropRect.w, cropRect.y + cropRect.h);
+  ctx.lineTo(cropRect.x + cropRect.w, cropRect.y + cropRect.h - cLen);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function aplicarRecorte() {
+  if (!cropperCanvas || !cropperImage) return;
+  const cw = cropperCanvas.width;
+  const ch = cropperCanvas.height;
+  const cropRect = getCropRect(cw, ch);
+
+  // Lienzo de exportación en alta definición
+  const exportW = 700;
+  const exportH = Math.round(exportW * (cropRect.h / cropRect.w));
+
+  const exportCanvas = document.createElement("canvas");
+  exportCanvas.width = exportW;
+  exportCanvas.height = exportH;
+  const eCtx = exportCanvas.getContext("2d");
+
+  // Fondo blanco para fotos con bordes o transparencias
+  eCtx.fillStyle = "#ffffff";
+  eCtx.fillRect(0, 0, exportW, exportH);
+
+  const scaleRatio = exportW / cropRect.w;
+  const baseScale = Math.max(cropRect.w / cropperImage.width, cropRect.h / cropperImage.height);
+  const drawW = cropperImage.width * baseScale;
+  const drawH = cropperImage.height * baseScale;
+
+  const relX = (cw / 2 + cropperPanX) - (cropRect.x + cropRect.w / 2);
+  const relY = (ch / 2 + cropperPanY) - (cropRect.y + cropRect.h / 2);
+
+  eCtx.save();
+  eCtx.translate(exportW / 2 + relX * scaleRatio, exportH / 2 + relY * scaleRatio);
+  eCtx.rotate((cropperRotation * Math.PI) / 180);
+  eCtx.scale(cropperZoom * scaleRatio, cropperZoom * scaleRatio);
+  eCtx.drawImage(cropperImage, -drawW / 2, -drawH / 2, drawW, drawH);
+  eCtx.restore();
+
+  // Comprimir a JPEG optimizado
+  let dataUrl = exportCanvas.toDataURL("image/jpeg", 0.76);
+  if (dataUrl.length > 170000) {
+    dataUrl = exportCanvas.toDataURL("image/jpeg", 0.58);
+  }
+
+  if (cropperTargetArray && cropperTargetIndex >= 0) {
+    cropperTargetArray[cropperTargetIndex] = dataUrl;
+  }
+
+  if (typeof cropperOnComplete === "function") {
+    cropperOnComplete();
+  }
+
+  if (imageCropperModal) imageCropperModal.style.display = "none";
+  showToast("✂️ Foto recortada y encuadrada con éxito");
+}
+
+function actualizarZoomSlider(val) {
+  cropperZoom = Math.round(val * 100) / 100;
+  if (cropperZoomRange) cropperZoomRange.value = cropperZoom;
+  if (cropperZoomValue) cropperZoomValue.textContent = `${Math.round(cropperZoom * 100)}%`;
+}
+
+function actualizarBotonesProporcionCropper(ratio) {
+  cropperAspectRatio = ratio;
+  if (cropperRatioSquare) cropperRatioSquare.classList.toggle("active", ratio === "1:1");
+  if (cropperRatio43) cropperRatio43.classList.toggle("active", ratio === "4:3");
+  if (cropperRatioFree) cropperRatioFree.classList.toggle("active", ratio === "free");
+}
+
+function getCanvasPoint(e) {
+  const rect = cropperCanvas.getBoundingClientRect();
+  const scaleX = cropperCanvas.width / rect.width;
+  const scaleY = cropperCanvas.height / rect.height;
+  return {
+    x: (e.clientX - rect.left) * scaleX,
+    y: (e.clientY - rect.top) * scaleY
+  };
+}
+
+if (cropperCanvas) {
+  cropperCanvas.addEventListener("mousedown", (e) => {
+    isDraggingCropper = true;
+    const pt = getCanvasPoint(e);
+    dragStartMouseX = pt.x;
+    dragStartMouseY = pt.y;
+    dragStartPanX = cropperPanX;
+    dragStartPanY = cropperPanY;
+  });
+
+  window.addEventListener("mousemove", (e) => {
+    if (!isDraggingCropper || !cropperCanvas) return;
+    const pt = getCanvasPoint(e);
+    cropperPanX = dragStartPanX + (pt.x - dragStartMouseX);
+    cropperPanY = dragStartPanY + (pt.y - dragStartMouseY);
+    dibujarCanvasCropper();
+  });
+
+  window.addEventListener("mouseup", () => {
+    isDraggingCropper = false;
+  });
+
+  cropperCanvas.addEventListener("touchstart", (e) => {
+    if (e.touches.length === 1) {
+      e.preventDefault();
+      isDraggingCropper = true;
+      const touch = e.touches[0];
+      const pt = getCanvasPoint(touch);
+      dragStartMouseX = pt.x;
+      dragStartMouseY = pt.y;
+      dragStartPanX = cropperPanX;
+      dragStartPanY = cropperPanY;
+    }
+  }, { passive: false });
+
+  cropperCanvas.addEventListener("touchmove", (e) => {
+    if (!isDraggingCropper || e.touches.length !== 1) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    const pt = getCanvasPoint(touch);
+    cropperPanX = dragStartPanX + (pt.x - dragStartMouseX);
+    cropperPanY = dragStartPanY + (pt.y - dragStartMouseY);
+    dibujarCanvasCropper();
+  }, { passive: false });
+
+  cropperCanvas.addEventListener("touchend", () => {
+    isDraggingCropper = false;
+  });
+
+  cropperCanvas.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 0.08 : -0.08;
+    cropperZoom = Math.max(0.2, Math.min(3.5, cropperZoom + delta));
+    actualizarZoomSlider(cropperZoom);
+    dibujarCanvasCropper();
+  }, { passive: false });
+}
+
+if (cropperZoomRange) {
+  cropperZoomRange.addEventListener("input", (e) => {
+    cropperZoom = parseFloat(e.target.value);
+    if (cropperZoomValue) cropperZoomValue.textContent = `${Math.round(cropperZoom * 100)}%`;
+    dibujarCanvasCropper();
+  });
+}
+
+if (cropperZoomInBtn) {
+  cropperZoomInBtn.addEventListener("click", () => {
+    cropperZoom = Math.min(3.5, cropperZoom + 0.15);
+    actualizarZoomSlider(cropperZoom);
+    dibujarCanvasCropper();
+  });
+}
+
+if (cropperZoomOutBtn) {
+  cropperZoomOutBtn.addEventListener("click", () => {
+    cropperZoom = Math.max(0.2, cropperZoom - 0.15);
+    actualizarZoomSlider(cropperZoom);
+    dibujarCanvasCropper();
+  });
+}
+
+if (cropperRotateLeftBtn) {
+  cropperRotateLeftBtn.addEventListener("click", () => {
+    cropperRotation = (cropperRotation - 90 + 360) % 360;
+    dibujarCanvasCropper();
+  });
+}
+
+if (cropperRotateRightBtn) {
+  cropperRotateRightBtn.addEventListener("click", () => {
+    cropperRotation = (cropperRotation + 90) % 360;
+    dibujarCanvasCropper();
+  });
+}
+
+if (cropperRatioSquare) {
+  cropperRatioSquare.addEventListener("click", () => {
+    actualizarBotonesProporcionCropper("1:1");
+    dibujarCanvasCropper();
+  });
+}
+
+if (cropperRatio43) {
+  cropperRatio43.addEventListener("click", () => {
+    actualizarBotonesProporcionCropper("4:3");
+    dibujarCanvasCropper();
+  });
+}
+
+if (cropperRatioFree) {
+  cropperRatioFree.addEventListener("click", () => {
+    actualizarBotonesProporcionCropper("free");
+    dibujarCanvasCropper();
+  });
+}
+
+if (cropperResetBtn) {
+  cropperResetBtn.addEventListener("click", () => {
+    cropperPanX = 0;
+    cropperPanY = 0;
+    cropperZoom = 1.0;
+    cropperRotation = 0;
+    actualizarZoomSlider(1.0);
+    dibujarCanvasCropper();
+  });
+}
+
+if (closeCropperBtn) closeCropperBtn.addEventListener("click", () => { if (imageCropperModal) imageCropperModal.style.display = "none"; });
+if (cropperCancelBtn) cropperCancelBtn.addEventListener("click", () => { if (imageCropperModal) imageCropperModal.style.display = "none"; });
+if (cropperApplyBtn) cropperApplyBtn.addEventListener("click", aplicarRecorte);
+
+// ==============================================================
+// MODAL LETRERO DE PUBLICACIÓN EXITOSA
+// ==============================================================
+function mostrarModalPublicadoExito(prod) {
+  if (!publishSuccessModal) return;
+
+  if (successProdTitle) successProdTitle.textContent = prod.titulo;
+  if (successProdCategory) successProdCategory.textContent = prod.categoria || "Mascotas";
+  if (successProdPrice) successProdPrice.textContent = `$ ${Number(prod.precio).toLocaleString("es-AR")}`;
+  if (successProdId) {
+    successProdId.textContent = `#${prod.id}`;
+    successProdId.dataset.id = prod.id;
+  }
+
+  if (successProdFeaturedBadge) {
+    successProdFeaturedBadge.style.display = prod.destacado ? "inline-block" : "none";
+  }
+
+  if (successProdImgBox) {
+    const mediaVal = prod.imagen || (Array.isArray(prod.imagenes) && prod.imagenes[0]) || "🐾";
+    successProdImgBox.innerHTML = getProductMediaHtml(mediaVal, prod.titulo);
+  }
+
+  publishSuccessModal.style.display = "flex";
+}
+
+if (successCopyIdBtn) {
+  successCopyIdBtn.addEventListener("click", () => {
+    const id = successProdId ? (successProdId.dataset.id || successProdId.textContent.replace("#", "")) : "";
+    copiarTextoPortapapeles(id, "📋 ID de producto copiado");
+  });
+}
+
+if (successGoToStoreBtn) {
+  successGoToStoreBtn.addEventListener("click", () => {
+    publishSuccessModal.style.display = "none";
+    mostrarTienda();
+    const catalogHeader = document.querySelector(".section-header");
+    if (catalogHeader) catalogHeader.scrollIntoView({ behavior: "smooth" });
+  });
+}
+
+if (successPublishAnotherBtn) {
+  successPublishAnotherBtn.addEventListener("click", () => {
+    publishSuccessModal.style.display = "none";
+    const prodTitleEl = document.getElementById("prodTitle");
+    if (prodTitleEl) {
+      prodTitleEl.focus();
+      prodTitleEl.scrollIntoView({ behavior: "smooth" });
+    }
+  });
+}
+
+if (successViewInAdminBtn) {
+  successViewInAdminBtn.addEventListener("click", () => {
+    publishSuccessModal.style.display = "none";
+    const adminCard = document.querySelector(".admin-table-card-col");
+    if (adminCard) {
+      adminCard.scrollIntoView({ behavior: "smooth" });
+    }
+  });
 }
 
 // ==============================================================
@@ -724,6 +1239,12 @@ function abrirDetalleProducto(prod) {
   }
   if (detailProdDescText) {
     detailProdDescText.textContent = prod.descripcion || "Producto seleccionado especialmente para el bienestar y cuidado de tu mascota con los más altos estándares de calidad.";
+  }
+
+  // Mostrar el ID único del producto en el encabezado del modal de detalle
+  if (detailProdIdBadge) {
+    detailProdIdBadge.textContent = `#${prod.id}`;
+    detailProdIdBadge.dataset.id = prod.id;
   }
 
   actualizarImagenPrincipalDetalle(0);
@@ -1421,6 +1942,9 @@ newProductForm.addEventListener("submit", async (e) => {
     return;
   }
 
+  // Prevenir envío múltiple si ya se está procesando
+  if (isSubmittingNewProduct) return;
+
   const titulo = document.getElementById("prodTitle").value.trim();
   const prodBrandEl = document.getElementById("prodBrand");
   const marca = (prodBrandEl ? prodBrandEl.value.trim() : "") || "Kira Pet Oficial";
@@ -1430,6 +1954,25 @@ newProductForm.addEventListener("submit", async (e) => {
   const descripcion = document.getElementById("prodDesc").value.trim();
   const prodFeaturedEl = document.getElementById("prodFeatured");
   const destacado = prodFeaturedEl ? prodFeaturedEl.checked : true;
+
+  // 1. PREVENCIÓN DE PUBLICACIONES REPETIDAS: Comprobar duplicado por nombre
+  const tituloNormalizado = titulo.toLowerCase().trim();
+  const productoRepetido = storeProducts.find(
+    (p) => (p.titulo || "").toLowerCase().trim() === tituloNormalizado
+  );
+
+  const saveProdBtn = document.getElementById("saveProdBtn");
+  const textoOriginalBtn = saveProdBtn ? saveProdBtn.innerHTML : "Publicar Producto en Vivo";
+
+  if (productoRepetido) {
+    const confirmar = confirm(
+      `⚠️ ATENCIÓN - PRODUCTO REPETIDO:\n\nYa existe un producto con el nombre:\n"${titulo}" (ID: ${productoRepetido.id})\n\n¿Deseas publicarlo de todos modos como un nuevo producto, o prefieres cancelar y editar el existente?`
+    );
+    if (!confirmar) {
+      showToast("ℹ️ Publicación cancelada para evitar duplicar el producto");
+      return;
+    }
+  }
 
   // Si quedó texto pendiente en el input de URL, agregarlo si hay cupo
   if (prodImageUrlInput && prodImageUrlInput.value.trim() && newProductImages.length < 5) {
@@ -1441,7 +1984,13 @@ newProductForm.addEventListener("submit", async (e) => {
   const imagenPrincipal = imagenesFinales[0];
 
   try {
-    await window.db.collection(PROD_COLLECTION).add({
+    isSubmittingNewProduct = true;
+    if (saveProdBtn) {
+      saveProdBtn.disabled = true;
+      saveProdBtn.innerHTML = `⏳ Publicando producto en vivo...`;
+    }
+
+    const docRef = await window.db.collection(PROD_COLLECTION).add({
       titulo,
       marca,
       categoria,
@@ -1457,17 +2006,36 @@ newProductForm.addEventListener("submit", async (e) => {
       fechaCreacion: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    showToast(`✅ "${titulo}" publicado con ${imagenesFinales.length} foto(s)`);
+    showToast(`✅ "${titulo}" publicado con éxito`);
     newProductForm.reset();
     newProductImages = [];
     renderizarPreviewGaleriaNuevo();
     if (prodImageFilesInput) prodImageFilesInput.value = "";
     if (prodImageUrlInput) prodImageUrlInput.value = "";
+
+    // Mostrar el letrero modal en pantalla de producto publicado
+    mostrarModalPublicadoExito({
+      id: docRef.id,
+      titulo,
+      marca,
+      categoria,
+      precio,
+      stock,
+      imagen: imagenPrincipal,
+      destacado,
+      imagenes: imagenesFinales
+    });
   } catch (err) {
     if (err.message && err.message.includes("exceeds the maximum allowed size")) {
-      showToast("❌ Las fotos superan el límite de 1MB de Firebase. Sube menos fotos o fotos más ligeras.");
+      showToast("❌ Las fotos superan el límite de 1MB de Firebase. Sube fotos más ligeras.");
     } else {
       showToast(`❌ Error: ${err.message}`);
+    }
+  } finally {
+    isSubmittingNewProduct = false;
+    if (saveProdBtn) {
+      saveProdBtn.disabled = false;
+      saveProdBtn.innerHTML = textoOriginalBtn;
     }
   }
 });
@@ -1488,7 +2056,8 @@ function renderizarTablaAdminProductos() {
     const matchTitulo = (prod.titulo || "").toLowerCase().includes(filtro);
     const matchCat = (prod.categoria || "").toLowerCase().includes(filtro);
     const matchMarca = (prod.marca || "").toLowerCase().includes(filtro);
-    return matchTitulo || matchCat || matchMarca;
+    const matchId = (prod.id || "").toLowerCase().includes(filtro);
+    return matchTitulo || matchCat || matchMarca || matchId;
   });
 
   if (adminProductsCountBadge) {
@@ -1511,7 +2080,7 @@ function renderizarTablaAdminProductos() {
     const mediaVal = prod.imagen || prod.emoji || "🐾";
     const isUrl = mediaVal.startsWith("http://") || mediaVal.startsWith("https://") || mediaVal.startsWith("data:image");
     const mediaHtml = isUrl
-      ? `<img src="${escapeHtml(mediaVal)}" style="width:38px; height:38px; object-fit:cover; border-radius:6px; border:1px solid #cbd5e1; vertical-align:middle; margin-right:10px;">`
+      ? `<img src="${escapeHtml(mediaVal)}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; border:1px solid #cbd5e1; vertical-align:middle; margin-right:10px;">`
       : `<span style="font-size:1.5rem; vertical-align:middle; margin-right:10px;">${escapeHtml(mediaVal)}</span>`;
 
     const isFeatured = prod.destacado !== false;
@@ -1523,12 +2092,19 @@ function renderizarTablaAdminProductos() {
       <td>
         <div style="display:flex; align-items:center;">
           ${mediaHtml}
-          <div>
+          <div style="min-width:0;">
             <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
               <strong>${escapeHtml(prod.titulo)}</strong>
               ${featuredBadge}
             </div>
-            <small style="color:var(--text-muted); font-size:0.8rem;">Marca: ${escapeHtml(prod.marca || "Kira Pet Oficial")}</small>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:2px;">
+              <small style="color:var(--text-muted); font-size:0.8rem;">Marca: ${escapeHtml(prod.marca || "Kira Pet Oficial")}</small>
+              <div class="admin-prod-id-chip" title="ID de Firebase: ${escapeHtml(prod.id)}">
+                <span class="id-label">ID:</span>
+                <code class="id-val">${escapeHtml(prod.id)}</code>
+                <button type="button" class="btn-copy-mini-id" data-id="${escapeHtml(prod.id)}" title="Copiar ID al portapapeles">📋</button>
+              </div>
+            </div>
           </div>
         </div>
       </td>
@@ -1543,6 +2119,15 @@ function renderizarTablaAdminProductos() {
         <button class="btn btn-sm btn-secondary btn-del-prod" data-id="${prod.id}" style="color:red; margin-left:4px;">🗑️</button>
       </td>
     `;
+
+    // Botón para copiar ID rápido en la tabla
+    const copyIdMiniBtn = tr.querySelector(".btn-copy-mini-id");
+    if (copyIdMiniBtn) {
+      copyIdMiniBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        copiarTextoPortapapeles(prod.id, "📋 ID de producto copiado");
+      });
+    }
 
     // Alternar si está destacado en carrusel
     const toggleFeatBtn = tr.querySelector(".btn-toggle-feat");

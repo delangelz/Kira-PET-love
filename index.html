@@ -661,7 +661,14 @@
       <div class="modal-header">
         <div>
           <h3>🐾 Detalle del Producto</h3>
-          <span class="role-badge role-comprador" id="detailProdCategoryTag">Alimentos</span>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 4px;">
+            <span class="role-badge role-comprador" id="detailProdCategoryTag">Alimentos</span>
+            <div class="detail-id-chip" title="ID único del producto">
+              <span class="id-chip-label">ID:</span>
+              <code id="detailProdIdBadge" class="prod-id-code">#...</code>
+              <button type="button" class="btn-copy-id" id="detailCopyIdBtn" title="Copiar ID del producto">📋 Copiar</button>
+            </div>
+          </div>
         </div>
         <button class="modal-close-btn" id="closeDetailModalBtn">&times;</button>
       </div>
@@ -802,6 +809,114 @@
       </div>
     </div>
     <button class="lightbox-nav-btn next" id="lightboxNextBtn" aria-label="Siguiente">❯</button>
+  </div>
+
+  <!-- Modal Letrero de Publicación Exitosa -->
+  <div id="publishSuccessModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card publish-success-card">
+      <div class="success-celebration-header">
+        <div class="success-icon-badge">🎉</div>
+        <h3 style="color: #0f766e; margin: 10px 0 4px 0; font-size: 1.35rem;">¡Producto Publicado con Éxito!</h3>
+        <p style="color: #64748b; font-size: 0.88rem; margin: 0;">
+          Tu producto ya está disponible en vivo para todos los clientes en la tienda.
+        </p>
+      </div>
+
+      <!-- Tarjeta Resumen del Producto -->
+      <div class="success-product-preview-card">
+        <div class="success-preview-img-box" id="successProdImgBox">
+          <!-- Foto inyectada por JS -->
+        </div>
+        <div class="success-preview-info">
+          <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+            <span class="role-badge role-comprador" id="successProdCategory">Categoría</span>
+            <span id="successProdFeaturedBadge" class="badge-featured" style="display: none;">⭐ En Carrusel</span>
+          </div>
+          <h4 id="successProdTitle" style="margin: 0 0 6px 0; font-size: 1.05rem; color: #1e293b;">Nombre del Producto</h4>
+          <div style="font-size: 1.18rem; font-weight: 800; color: #0f766e; margin-bottom: 8px;" id="successProdPrice">$ 0</div>
+          
+          <!-- ID del Producto con botón para copiar -->
+          <div class="success-id-wrapper">
+            <span style="font-size: 0.74rem; color: #64748b; font-weight: 700;">ID DE PRODUCTO:</span>
+            <div class="id-copy-row">
+              <code id="successProdId" class="prod-id-code">#...</code>
+              <button type="button" id="successCopyIdBtn" class="btn-copy-id" title="Copiar ID al portapapeles">📋 Copiar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Acciones Rápidas -->
+      <div class="success-modal-actions">
+        <button type="button" class="btn btn-primary btn-block" id="successGoToStoreBtn" style="font-size: 0.95rem; padding: 11px;">
+          🛍️ Ver Producto en la Tienda
+        </button>
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
+          <button type="button" class="btn btn-secondary" id="successPublishAnotherBtn" style="flex: 1;">
+            ➕ Publicar Otro
+          </button>
+          <button type="button" class="btn btn-secondary" id="successViewInAdminBtn" style="flex: 1;">
+            📦 Mis Productos
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Editor y Recortador de Imagen -->
+  <div id="imageCropperModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card cropper-modal-card">
+      <div class="modal-header">
+        <div>
+          <h3>✂️ Editor y Recorte de Foto</h3>
+          <p class="modal-subtitle">Arrastra la imagen para ubicarla, usa el zoom y rota para el encuadre perfecto</p>
+        </div>
+        <button class="modal-close-btn" id="closeCropperBtn">&times;</button>
+      </div>
+
+      <!-- Área de Lienzo / Canvas Interactivo -->
+      <div class="cropper-viewport-wrapper">
+        <canvas id="cropperCanvas" width="420" height="360"></canvas>
+      </div>
+      <div class="cropper-hint">
+        <span>🖐️ Arrastra con el ratón o dedo para mover • Rueda del ratón para Zoom</span>
+      </div>
+
+      <!-- Barra de Herramientas y Controles -->
+      <div class="cropper-controls-bar">
+        <!-- Control de Zoom -->
+        <div class="cropper-control-group">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+            <label style="margin:0;">🔍 Zoom</label>
+            <span id="cropperZoomValue" class="cropper-zoom-text">100%</span>
+          </div>
+          <div class="cropper-zoom-row">
+            <button type="button" class="btn-cropper-icon" id="cropperZoomOutBtn" title="Reducir zoom">➖</button>
+            <input type="range" id="cropperZoomRange" min="0.2" max="3.5" step="0.05" value="1.0">
+            <button type="button" class="btn-cropper-icon" id="cropperZoomInBtn" title="Aumentar zoom">➕</button>
+          </div>
+        </div>
+
+        <!-- Proporción y Giros -->
+        <div class="cropper-control-group">
+          <label>📐 Proporción de Recorte y Giro</label>
+          <div class="cropper-buttons-row">
+            <button type="button" class="btn-cropper-tool active" id="cropperRatioSquare" data-ratio="1:1">1:1 Cuadrado</button>
+            <button type="button" class="btn-cropper-tool" id="cropperRatio43" data-ratio="4:3">4:3 Horizontal</button>
+            <button type="button" class="btn-cropper-tool" id="cropperRatioFree" data-ratio="free">Libre</button>
+            <button type="button" class="btn-cropper-tool" id="cropperRotateLeftBtn" title="Girar 90° a la izquierda">↺ -90°</button>
+            <button type="button" class="btn-cropper-tool" id="cropperRotateRightBtn" title="Girar 90° a la derecha">↻ +90°</button>
+            <button type="button" class="btn-cropper-tool" id="cropperResetBtn" title="Centrar y reiniciar encuadre">🔄 Centrar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Acciones del Editor -->
+      <div class="cropper-actions-row">
+        <button type="button" class="btn btn-secondary" id="cropperCancelBtn" style="flex: 1;">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="cropperApplyBtn" style="flex: 2;">✂️ Aplicar Recorte y Guardar</button>
+      </div>
+    </div>
   </div>
 
   <!-- Scripts -->
