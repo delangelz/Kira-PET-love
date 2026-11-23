@@ -22,10 +22,16 @@ const productsCount = document.getElementById("productsCount");
 const currentCategoryTitle = document.getElementById("currentCategoryTitle");
 const storeSearchInput = document.getElementById("storeSearchInput");
 const storeSearchBtn = document.getElementById("storeSearchBtn");
-const catPills = document.querySelectorAll(".cat-pill");
+const catPills = document.querySelectorAll("#buyerCategoryBar .cat-pill");
 const connectionStatus = document.getElementById("connectionStatus");
 const statusText = document.getElementById("statusText");
 const toast = document.getElementById("toast");
+
+// Elementos de Vista Alternable de Mis Productos en Admin
+const adminViewCardsBtn = document.getElementById("adminViewCardsBtn");
+const adminViewTableBtn = document.getElementById("adminViewTableBtn");
+const adminProductsCardsContainer = document.getElementById("adminProductsCardsContainer");
+const adminProductsTableContainer = document.getElementById("adminProductsTableContainer");
 
 // Carrito
 const cartCount = document.getElementById("cartCount");
@@ -1011,18 +1017,24 @@ function iniciarEscuchaProductosEnVivo() {
 // 4. RENDERIZAR CATÁLOGO
 // ==============================================================
 function renderizarCatalogo() {
-  const search = storeSearchInput.value.trim().toLowerCase();
+  const search = (storeSearchInput ? storeSearchInput.value : "").trim().toLowerCase();
+  const cat = currentCategory || "todos";
 
   const filtrados = storeProducts.filter((item) => {
-    if (currentCategory !== "todos" && item.categoria !== currentCategory) {
+    if (cat !== "todos" && item.categoria !== cat) {
       return false;
     }
     const titleMatch = item.titulo ? item.titulo.toLowerCase().includes(search) : false;
     const catMatch = item.categoria ? item.categoria.toLowerCase().includes(search) : false;
-    return titleMatch || catMatch;
+    const brandMatch = item.marca ? item.marca.toLowerCase().includes(search) : false;
+    const idMatch = item.id ? item.id.toLowerCase().includes(search) : false;
+    return titleMatch || catMatch || brandMatch || idMatch;
   });
 
-  productsCount.textContent = `${filtrados.length} productos`;
+  if (productsCount) {
+    productsCount.textContent = `${filtrados.length} productos`;
+  }
+  if (!productsGrid) return;
   productsGrid.innerHTML = "";
 
   if (filtrados.length === 0) {
@@ -1088,8 +1100,8 @@ catPills.forEach((btn) => {
   btn.addEventListener("click", () => {
     catPills.forEach((b) => b.classList.remove("active"));
     btn.classList.add("active");
-    currentCategory = btn.getAttribute("data-cat");
-    currentCategoryTitle.textContent = btn.textContent;
+    currentCategory = btn.getAttribute("data-cat") || "todos";
+    if (currentCategoryTitle) currentCategoryTitle.textContent = btn.textContent;
     renderizarCatalogo();
   });
 });
@@ -1618,18 +1630,17 @@ function actualizarUIUsuario() {
     userRoleBadge.className = `role-badge role-${rol}`;
 
     // Si es Admin o Vendedor, se activan sus botones directamente en la barra superior señalada
-    if (rol === "admin") {
-      buyerCategoriesBar.style.display = "none";
+    if (rol === "admin" || rol === "vendedor") {
       adminNavHeaderBar.style.display = "flex";
-      adminBarUsersBtn.style.display = "inline-flex";
-      if (adminBarSettingsBtn) adminBarSettingsBtn.style.display = "inline-flex";
+      if (adminBarUsersBtn) adminBarUsersBtn.style.display = (rol === "admin") ? "inline-flex" : "none";
+      if (adminBarSettingsBtn) adminBarSettingsBtn.style.display = (rol === "admin") ? "inline-flex" : "none";
       openMyOrdersBtn.style.display = "none";
-    } else if (rol === "vendedor") {
-      buyerCategoriesBar.style.display = "none";
-      adminNavHeaderBar.style.display = "flex";
-      adminBarUsersBtn.style.display = "none";
-      if (adminBarSettingsBtn) adminBarSettingsBtn.style.display = "none";
-      openMyOrdersBtn.style.display = "none";
+      // Si la tienda está activa, mostrar también la barra de categorías para que el admin pueda filtrar
+      if (storeView && storeView.style.display !== "none") {
+        buyerCategoriesBar.style.display = "flex";
+      } else {
+        buyerCategoriesBar.style.display = "none";
+      }
     } else {
       buyerCategoriesBar.style.display = "flex";
       adminNavHeaderBar.style.display = "none";
@@ -1871,6 +1882,10 @@ function ocultarTodasLasVistas() {
   ordersManagementView.style.display = "none";
   usersManagementView.style.display = "none";
   myOrdersView.style.display = "none";
+  // Ocultar barra de categorías de comprador si estamos en secciones de gestión
+  if (buyerCategoriesBar && currentUser && (currentUser.rol === "admin" || currentUser.rol === "vendedor")) {
+    buyerCategoriesBar.style.display = "none";
+  }
 }
 
 function marcarBotonAdminActivo(btn) {
@@ -1884,6 +1899,16 @@ function mostrarTienda() {
   ocultarTodasLasVistas();
   storeView.style.display = "block";
   marcarBotonAdminActivo(adminBarStoreBtn);
+  if (buyerCategoriesBar) buyerCategoriesBar.style.display = "flex";
+  currentCategory = "todos";
+  if (currentCategoryTitle) currentCategoryTitle.textContent = "Catálogo de Productos para Mascotas";
+  if (catPills) {
+    catPills.forEach((b) => {
+      b.classList.toggle("active", b.getAttribute("data-cat") === "todos");
+    });
+  }
+  renderizarCatalogo();
+  renderizarCarruselDestacados();
 }
 
 function mostrarMisProductos() {
@@ -2045,9 +2070,29 @@ if (adminProductFilterInput) {
   adminProductFilterInput.addEventListener("input", renderizarTablaAdminProductos);
 }
 
+// Botones para alternar entre vista Tarjetas y vista Tabla en Mis Productos
+if (adminViewCardsBtn) {
+  adminViewCardsBtn.addEventListener("click", () => {
+    adminViewCardsBtn.classList.add("active");
+    if (adminViewTableBtn) adminViewTableBtn.classList.remove("active");
+    if (adminProductsCardsContainer) adminProductsCardsContainer.style.display = "grid";
+    if (adminProductsTableContainer) adminProductsTableContainer.style.display = "none";
+  });
+}
+
+if (adminViewTableBtn) {
+  adminViewTableBtn.addEventListener("click", () => {
+    adminViewTableBtn.classList.add("active");
+    if (adminViewCardsBtn) adminViewCardsBtn.classList.remove("active");
+    if (adminProductsCardsContainer) adminProductsCardsContainer.style.display = "none";
+    if (adminProductsTableContainer) adminProductsTableContainer.style.display = "block";
+  });
+}
+
 function renderizarTablaAdminProductos() {
-  if (!adminProductsTableBody) return;
-  adminProductsTableBody.innerHTML = "";
+  if (!adminProductsTableBody && !adminProductsCardsContainer) return;
+  if (adminProductsTableBody) adminProductsTableBody.innerHTML = "";
+  if (adminProductsCardsContainer) adminProductsCardsContainer.innerHTML = "";
 
   const filtro = (adminProductFilterInput ? adminProductFilterInput.value : "").trim().toLowerCase();
 
@@ -2065,119 +2110,206 @@ function renderizarTablaAdminProductos() {
   }
 
   if (filtrados.length === 0) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td colspan="5" style="text-align: center; padding: 24px; color: var(--text-muted);">
-        🔍 No se encontraron productos que coincidan con "${escapeHtml(filtro)}"
-      </td>
-    `;
-    adminProductsTableBody.appendChild(tr);
+    if (adminProductsTableBody) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td colspan="5" style="text-align: center; padding: 24px; color: var(--text-muted);">
+          🔍 No se encontraron productos que coincidan con "${escapeHtml(filtro)}"
+        </td>
+      `;
+      adminProductsTableBody.appendChild(tr);
+    }
+    if (adminProductsCardsContainer) {
+      adminProductsCardsContainer.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 36px 16px; color: var(--text-muted);">
+          <div style="font-size: 2.5rem; margin-bottom: 8px;">🔍</div>
+          <p style="font-weight: 600; margin: 0;">No se encontraron productos que coincidan con "${escapeHtml(filtro)}"</p>
+        </div>
+      `;
+    }
     return;
   }
 
   filtrados.forEach((prod) => {
-    const tr = document.createElement("tr");
     const mediaVal = prod.imagen || prod.emoji || "🐾";
-    const isUrl = mediaVal.startsWith("http://") || mediaVal.startsWith("https://") || mediaVal.startsWith("data:image");
-    const mediaHtml = isUrl
-      ? `<img src="${escapeHtml(mediaVal)}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; border:1px solid #cbd5e1; vertical-align:middle; margin-right:10px;">`
-      : `<span style="font-size:1.5rem; vertical-align:middle; margin-right:10px;">${escapeHtml(mediaVal)}</span>`;
-
+    const formattedPrice = Number(prod.precio).toLocaleString("es-AR");
     const isFeatured = prod.destacado !== false;
-    const featuredBadge = isFeatured
-      ? `<span class="badge-featured" title="Visible en el carrusel de inicio">⭐ Carrusel</span>`
-      : `<span style="font-size:0.75rem; color:#94a3b8; background:#f1f5f9; padding:2px 6px; border-radius:10px;">Catálogo</span>`;
 
-    tr.innerHTML = `
-      <td>
-        <div style="display:flex; align-items:center;">
-          ${mediaHtml}
-          <div style="min-width:0;">
-            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-              <strong>${escapeHtml(prod.titulo)}</strong>
-              ${featuredBadge}
-            </div>
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:2px;">
-              <small style="color:var(--text-muted); font-size:0.8rem;">Marca: ${escapeHtml(prod.marca || "Kira Pet Oficial")}</small>
-              <div class="admin-prod-id-chip" title="ID de Firebase: ${escapeHtml(prod.id)}">
-                <span class="id-label">ID:</span>
-                <code class="id-val">${escapeHtml(prod.id)}</code>
-                <button type="button" class="btn-copy-mini-id" data-id="${escapeHtml(prod.id)}" title="Copiar ID al portapapeles">📋</button>
-              </div>
-            </div>
+    // --- 1. RENDERIZAR EN LA VISTA DE TARJETAS (COMO EN LA TIENDA) ---
+    if (adminProductsCardsContainer) {
+      const card = document.createElement("div");
+      card.className = "admin-product-card";
+
+      card.innerHTML = `
+        <div class="admin-card-img-box" style="cursor: pointer;" title="Haz clic para ver el detalle de fotos">
+          ${getProductMediaHtml(mediaVal, prod.titulo)}
+          ${isFeatured ? '<span class="badge-featured-mini">⭐ Carrusel</span>' : ''}
+          <span class="admin-card-id-tag">#${escapeHtml(prod.id)}</span>
+        </div>
+        <div class="admin-card-body">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="product-category-tag" style="margin: 0;">${escapeHtml(prod.categoria)}</span>
+            <button type="button" class="btn-copy-id" data-id="${escapeHtml(prod.id)}" title="Copiar ID del producto">📋 Copiar ID</button>
+          </div>
+          <h3 class="admin-card-title">${escapeHtml(prod.titulo)}</h3>
+          <small style="color: var(--text-muted); font-size: 0.78rem; display: block; margin-bottom: 4px;">Marca: ${escapeHtml(prod.marca || "Kira Pet Oficial")}</small>
+          
+          <div class="admin-card-price-stock">
+            <div class="admin-card-price">$ ${formattedPrice}</div>
+            <div class="admin-card-stock ${prod.stock <= 3 ? 'low-stock' : ''}">Stock: ${prod.stock} u.</div>
+          </div>
+          
+          <div class="admin-card-actions">
+            <button type="button" class="btn btn-secondary btn-card-detail" data-id="${prod.id}" title="Ver detalle del producto" style="flex: 1;">👁️ Detalle</button>
+            <button type="button" class="btn btn-secondary btn-card-edit" data-id="${prod.id}" title="Editar producto" style="flex: 1;">✏️ Editar</button>
+            <button type="button" class="btn btn-secondary btn-card-feat" data-id="${prod.id}" title="${isFeatured ? 'Quitar del carrusel' : 'Destacar en carrusel'}">${isFeatured ? '⭐' : '☆'}</button>
+            <button type="button" class="btn btn-secondary btn-card-del" data-id="${prod.id}" title="Eliminar producto" style="color: red;">🗑️</button>
           </div>
         </div>
-      </td>
-      <td>${escapeHtml(prod.categoria)}</td>
-      <td><strong>$ ${Number(prod.precio).toLocaleString("es-AR")}</strong></td>
-      <td>${prod.stock} u.</td>
-      <td class="text-right">
-        <button class="btn btn-sm btn-secondary btn-toggle-feat" data-id="${prod.id}" title="${isFeatured ? 'Quitar del carrusel' : 'Destacar en carrusel'}" style="margin-right:4px;">
-          ${isFeatured ? '⭐' : '☆'}
-        </button>
-        <button class="btn btn-sm btn-secondary btn-edit-prod" data-id="${prod.id}">✏️ Editar</button>
-        <button class="btn btn-sm btn-secondary btn-del-prod" data-id="${prod.id}" style="color:red; margin-left:4px;">🗑️</button>
-      </td>
-    `;
+      `;
 
-    // Botón para copiar ID rápido en la tabla
-    const copyIdMiniBtn = tr.querySelector(".btn-copy-mini-id");
-    if (copyIdMiniBtn) {
-      copyIdMiniBtn.addEventListener("click", (e) => {
+      card.querySelector(".btn-copy-id")?.addEventListener("click", (e) => {
         e.stopPropagation();
         copiarTextoPortapapeles(prod.id, "📋 ID de producto copiado");
       });
-    }
 
-    // Alternar si está destacado en carrusel
-    const toggleFeatBtn = tr.querySelector(".btn-toggle-feat");
-    if (toggleFeatBtn) {
-      toggleFeatBtn.addEventListener("click", async () => {
-        const nuevoEstado = !isFeatured;
-        try {
-          await window.db.collection(PROD_COLLECTION).doc(prod.id).update({
-            destacado: nuevoEstado
-          });
-          showToast(nuevoEstado ? `⭐ "${prod.titulo}" añadido al carrusel` : `"${prod.titulo}" quitado del carrusel`);
-        } catch (err) {
-          showToast(`❌ Error: ${err.message}`);
-        }
+      card.querySelector(".btn-card-detail")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        abrirDetalleProducto(prod);
       });
+
+      card.querySelector(".btn-card-edit")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        abrirFormularioEditar(prod);
+      });
+
+      card.querySelector(".btn-card-feat")?.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        await alternarCarruselProducto(prod, !isFeatured);
+      });
+
+      card.querySelector(".btn-card-del")?.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        await borrarProducto(prod);
+      });
+
+      card.querySelector(".admin-card-img-box")?.addEventListener("click", () => {
+        abrirDetalleProducto(prod);
+      });
+
+      adminProductsCardsContainer.appendChild(card);
     }
 
-    tr.querySelector(".btn-edit-prod").addEventListener("click", () => {
-      editProdId.value = prod.id;
-      editProdTitle.value = prod.titulo || "";
-      const editBrandEl = document.getElementById("editProdBrand");
-      if (editBrandEl) editBrandEl.value = prod.marca || "Kira Pet Oficial";
-      editProdCategory.value = prod.categoria || "Alimentos";
-      editProdPrice.value = prod.precio || 0;
-      editProdStock.value = prod.stock || 0;
-      editProdDesc.value = prod.descripcion || "";
-      const editFeaturedEl = document.getElementById("editProdFeatured");
-      if (editFeaturedEl) editFeaturedEl.checked = (prod.destacado !== false);
+    // --- 2. RENDERIZAR EN LA VISTA DE TABLA ---
+    if (adminProductsTableBody) {
+      const tr = document.createElement("tr");
+      const isUrl = mediaVal.startsWith("http://") || mediaVal.startsWith("https://") || mediaVal.startsWith("data:image");
+      const mediaHtml = isUrl
+        ? `<img src="${escapeHtml(mediaVal)}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; border:1px solid #cbd5e1; vertical-align:middle; margin-right:10px;">`
+        : `<span style="font-size:1.5rem; vertical-align:middle; margin-right:10px;">${escapeHtml(mediaVal)}</span>`;
 
-      // Cargar imágenes existentes (hasta 5)
-      editProductImages = Array.isArray(prod.imagenes) && prod.imagenes.length > 0
-        ? [...prod.imagenes]
-        : [prod.imagen || prod.emoji || "🐾"];
-      renderizarPreviewGaleriaEditar();
+      const featuredBadge = isFeatured
+        ? `<span class="badge-featured" title="Visible en el carrusel de inicio">⭐ Carrusel</span>`
+        : `<span style="font-size:0.75rem; color:#94a3b8; background:#f1f5f9; padding:2px 6px; border-radius:10px;">Catálogo</span>`;
 
-      if (editProdImageFilesInput) editProdImageFilesInput.value = "";
-      if (editProdImageUrlInput) editProdImageUrlInput.value = "";
+      tr.innerHTML = `
+        <td>
+          <div style="display:flex; align-items:center;">
+            ${mediaHtml}
+            <div style="min-width:0;">
+              <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                <strong>${escapeHtml(prod.titulo)}</strong>
+                ${featuredBadge}
+              </div>
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:2px;">
+                <small style="color:var(--text-muted); font-size:0.8rem;">Marca: ${escapeHtml(prod.marca || "Kira Pet Oficial")}</small>
+                <div class="admin-prod-id-chip" title="ID de Firebase: ${escapeHtml(prod.id)}">
+                  <span class="id-label">ID:</span>
+                  <code class="id-val">${escapeHtml(prod.id)}</code>
+                  <button type="button" class="btn-copy-mini-id" data-id="${escapeHtml(prod.id)}" title="Copiar ID al portapapeles">📋</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </td>
+        <td>${escapeHtml(prod.categoria)}</td>
+        <td><strong>$ ${formattedPrice}</strong></td>
+        <td>${prod.stock} u.</td>
+        <td class="text-right">
+          <button class="btn btn-sm btn-secondary btn-toggle-feat" data-id="${prod.id}" title="${isFeatured ? 'Quitar del carrusel' : 'Destacar en carrusel'}" style="margin-right:4px;">
+            ${isFeatured ? '⭐' : '☆'}
+          </button>
+          <button class="btn btn-sm btn-secondary btn-edit-prod" data-id="${prod.id}">✏️ Editar</button>
+          <button class="btn btn-sm btn-secondary btn-del-prod" data-id="${prod.id}" style="color:red; margin-left:4px;">🗑️</button>
+        </td>
+      `;
 
-      editProductModal.style.display = "flex";
-    });
+      tr.querySelector(".btn-copy-mini-id")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        copiarTextoPortapapeles(prod.id, "📋 ID de producto copiado");
+      });
 
-    tr.querySelector(".btn-del-prod").addEventListener("click", async () => {
-      if (confirm(`¿Eliminar permanentemente "${prod.titulo}"?`)) {
-        await window.db.collection(PROD_COLLECTION).doc(prod.id).delete();
-        showToast("🗑️ Producto eliminado");
-      }
-    });
+      tr.querySelector(".btn-toggle-feat")?.addEventListener("click", async () => {
+        await alternarCarruselProducto(prod, !isFeatured);
+      });
 
-    adminProductsTableBody.appendChild(tr);
+      tr.querySelector(".btn-edit-prod")?.addEventListener("click", () => {
+        abrirFormularioEditar(prod);
+      });
+
+      tr.querySelector(".btn-del-prod")?.addEventListener("click", async () => {
+        await borrarProducto(prod);
+      });
+
+      adminProductsTableBody.appendChild(tr);
+    }
   });
+}
+
+function abrirFormularioEditar(prod) {
+  editProdId.value = prod.id;
+  editProdTitle.value = prod.titulo || "";
+  const editBrandEl = document.getElementById("editProdBrand");
+  if (editBrandEl) editBrandEl.value = prod.marca || "Kira Pet Oficial";
+  editProdCategory.value = prod.categoria || "Alimentos";
+  editProdPrice.value = prod.precio || 0;
+  editProdStock.value = prod.stock || 0;
+  editProdDesc.value = prod.descripcion || "";
+  const editFeaturedEl = document.getElementById("editProdFeatured");
+  if (editFeaturedEl) editFeaturedEl.checked = (prod.destacado !== false);
+
+  // Cargar imágenes existentes (hasta 5)
+  editProductImages = Array.isArray(prod.imagenes) && prod.imagenes.length > 0
+    ? [...prod.imagenes]
+    : [prod.imagen || prod.emoji || "🐾"];
+  renderizarPreviewGaleriaEditar();
+
+  if (editProdImageFilesInput) editProdImageFilesInput.value = "";
+  if (editProdImageUrlInput) editProdImageUrlInput.value = "";
+
+  editProductModal.style.display = "flex";
+}
+
+async function alternarCarruselProducto(prod, nuevoEstado) {
+  try {
+    await window.db.collection(PROD_COLLECTION).doc(prod.id).update({
+      destacado: nuevoEstado
+    });
+    showToast(nuevoEstado ? `⭐ "${prod.titulo}" añadido al carrusel` : `"${prod.titulo}" quitado del carrusel`);
+  } catch (err) {
+    showToast(`❌ Error: ${err.message}`);
+  }
+}
+
+async function borrarProducto(prod) {
+  if (confirm(`¿Eliminar permanentemente "${prod.titulo}"?`)) {
+    try {
+      await window.db.collection(PROD_COLLECTION).doc(prod.id).delete();
+      showToast("🗑️ Producto eliminado");
+    } catch (err) {
+      showToast(`❌ Error: ${err.message}`);
+    }
+  }
 }
 
 // Modal Editar Producto - Eventos de Guardado y Cierre

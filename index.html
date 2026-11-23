@@ -95,15 +95,15 @@
 
       <!-- 2. Para el Administrador y Vendedor: Directamente en la barra -->
       <div id="adminNavHeaderBar" class="header-container categories-bar" style="display: none;">
-        <button class="cat-pill active" id="adminBarStoreBtn">🛍️ Ver Tienda</button>
-        <button class="cat-pill" id="adminBarProductsBtn">📦 Mis Productos</button>
-        <button class="cat-pill" id="adminBarOrdersBtn">
+        <button class="admin-nav-pill active" id="adminBarStoreBtn">🛍️ Ver Tienda</button>
+        <button class="admin-nav-pill" id="adminBarProductsBtn">📦 Mis Productos</button>
+        <button class="admin-nav-pill" id="adminBarOrdersBtn">
           📋 Pedidos Clientes (<span id="adminBarOrdersCount">0</span>)
         </button>
-        <button class="cat-pill admin-only-pill" id="adminBarUsersBtn" style="display: none;">
+        <button class="admin-nav-pill admin-only-pill" id="adminBarUsersBtn" style="display: none;">
           👥 Gestión de Usuarios
         </button>
-        <button class="cat-pill admin-only-pill" id="adminBarSettingsBtn" style="display: none;">
+        <button class="admin-nav-pill admin-only-pill" id="adminBarSettingsBtn" style="display: none;">
           ⚙️ Logo y Tienda
         </button>
       </div>
@@ -272,21 +272,39 @@
         </form>
       </div>
 
-      <!-- COLUMNA DERECHA: Mis Productos con Buscador de Filtrado -->
+      <!-- COLUMNA DERECHA: Mis Productos con Buscador de Filtrado y Vista Tarjetas / Tabla -->
       <div class="card admin-table-card-col">
         <div class="table-header-with-search">
           <div>
             <h3>📦 Mis Productos (<span id="adminProductsCountBadge">0</span>)</h3>
-            <p class="subtitle" style="font-size: 0.82rem;">Modifica precios o elimina productos al instante.</p>
+            <p class="subtitle" style="font-size: 0.82rem;">Modifica precios, fotos, stock o elimina al instante.</p>
           </div>
           
-          <!-- Buscador para filtrar productos -->
-          <div class="admin-prod-search-box">
-            <input type="text" id="adminProductFilterInput" placeholder="🔍 Filtrar por nombre o categoría...">
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <!-- Selector de Vista: Tarjetas o Tabla -->
+            <div class="admin-view-toggle">
+              <button type="button" class="btn-toggle-view active" id="adminViewCardsBtn" title="Ver como tarjetas de tienda">
+                🛍️ Tarjetas
+              </button>
+              <button type="button" class="btn-toggle-view" id="adminViewTableBtn" title="Ver como tabla detallada">
+                📊 Tabla
+              </button>
+            </div>
+
+            <!-- Buscador para filtrar productos -->
+            <div class="admin-prod-search-box">
+              <input type="text" id="adminProductFilterInput" placeholder="🔍 Filtrar por nombre, categoría o ID...">
+            </div>
           </div>
         </div>
 
-        <div class="table-responsive" style="margin-top: 14px;">
+        <!-- Contenedor 1: Vista Tarjetas como en la Tienda -->
+        <div id="adminProductsCardsContainer" class="admin-products-cards-grid" style="margin-top: 14px;">
+          <!-- Inyectado por JS -->
+        </div>
+
+        <!-- Contenedor 2: Vista Tabla Compacta -->
+        <div id="adminProductsTableContainer" class="table-responsive" style="display: none; margin-top: 14px;">
           <table class="data-table">
             <thead>
               <tr>
