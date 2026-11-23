@@ -2833,3 +2833,333 @@ html, body {
   font-size: 0.75rem;
   font-weight: 700;
 }
+
+/* ==============================================================
+   NOTA DE ENTREGA DE CLIENTE & ESTADOS ROJO / VERDE
+   ============================================================== */
+.order-status-select.status-red {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+  border: 1.5px solid #f87171 !important;
+  font-weight: 800;
+}
+
+.order-status-select.status-green {
+  background: #dcfce7 !important;
+  color: #15803d !important;
+  border: 1.5px solid #4ade80 !important;
+  font-weight: 800;
+}
+
+.badge-status-red {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.badge-status-green {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.delivery-note-card {
+  max-width: 680px;
+  width: 100%;
+  padding: 20px;
+}
+
+.delivery-note-sheet {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 24px;
+  margin-top: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.dn-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.dn-brand-title {
+  font-size: 1.45rem;
+  font-weight: 900;
+  color: #0f766e;
+}
+
+.dn-store-slogan {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 3px 0 2px 0;
+}
+
+.dn-store-contact {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.dn-status-box {
+  text-align: right;
+  min-width: 220px;
+}
+
+.dn-status-badge {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  margin-bottom: 6px;
+}
+
+.dn-status-badge.status-pending {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1.5px solid #f87171;
+}
+
+.dn-status-badge.status-delivered {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1.5px solid #4ade80;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.2);
+}
+
+.dn-order-id-label {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.dn-order-id-val {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f766e;
+}
+
+.dn-date-row {
+  font-size: 0.76rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.dn-divider {
+  border: none;
+  border-top: 1.5px dashed #cbd5e1;
+  margin: 16px 0;
+}
+
+.dn-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.dn-info-block {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.dn-info-block h4 {
+  font-size: 0.8rem;
+  color: #0f766e;
+  margin: 0 0 6px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.dn-info-block p {
+  font-size: 0.82rem;
+  color: #334155;
+  margin: 3px 0;
+}
+
+.dn-table-wrapper {
+  margin-top: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.dn-items-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dn-items-table th {
+  background: #f1f5f9;
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #475569;
+  padding: 8px 10px;
+  text-transform: uppercase;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.dn-items-table td {
+  padding: 8px 10px;
+  font-size: 0.84rem;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.dn-thumb-img {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
+  display: block;
+}
+
+.dn-totals-box {
+  margin-top: 14px;
+  margin-left: auto;
+  max-width: 300px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+.dn-totals-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.84rem;
+  color: #475569;
+  margin-bottom: 4px;
+}
+
+.dn-totals-row.total-highlight {
+  border-top: 1.5px solid #cbd5e1;
+  padding-top: 6px;
+  margin-top: 6px;
+  color: #0f766e;
+  font-weight: 900;
+  font-size: 0.95rem;
+}
+
+.dn-grand-total {
+  font-size: 1.25rem;
+  color: #0f766e;
+  font-weight: 900;
+}
+
+.dn-signature-section {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 36px;
+  padding-top: 10px;
+}
+
+.dn-signature-box {
+  flex: 1;
+  text-align: center;
+}
+
+.dn-signature-line {
+  border-top: 1px solid #94a3b8;
+  margin-bottom: 6px;
+}
+
+.dn-signature-box p {
+  font-size: 0.78rem;
+  color: #334155;
+  margin: 0;
+}
+
+.dn-signature-box small {
+  font-size: 0.7rem;
+  color: #94a3b8;
+}
+
+.dn-footer-legal {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 0.74rem;
+  color: #94a3b8;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 8px;
+}
+
+.delivery-note-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+@media (max-width: 600px) {
+  .dn-details-grid {
+    grid-template-columns: 1fr;
+  }
+  .dn-status-box {
+    text-align: left;
+    min-width: 100%;
+  }
+  .dn-signature-section {
+    flex-direction: column;
+    gap: 20px;
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  #deliveryNoteModal, #deliveryNoteModal * {
+    visibility: visible !important;
+  }
+  #deliveryNoteModal {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    background: transparent !important;
+    padding: 0 !important;
+    display: block !important;
+  }
+  .delivery-note-card {
+    max-width: 100% !important;
+    width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .delivery-note-sheet {
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 16px !important;
+  }
+}

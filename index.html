@@ -100,6 +100,9 @@
         <button class="admin-nav-pill" id="adminBarOrdersBtn">
           📋 Pedidos Clientes (<span id="adminBarOrdersCount">0</span>)
         </button>
+        <button class="admin-nav-pill" id="adminBarMyOrdersBtn">
+          🛍️ Mis Compras (<span id="adminBarMyOrdersCount">0</span>)
+        </button>
         <button class="admin-nav-pill admin-only-pill" id="adminBarUsersBtn" style="display: none;">
           👥 Gestión de Usuarios
         </button>
@@ -356,8 +359,8 @@
               <th>Cliente</th>
               <th>Productos Comprados</th>
               <th>Total</th>
-              <th>Estado</th>
-              <th class="text-right">Cambiar Estado</th>
+              <th>Estado Logístico</th>
+              <th class="text-right">Nota / Acciones</th>
             </tr>
           </thead>
           <tbody id="adminOrdersTableBody">
@@ -930,6 +933,132 @@
       <div class="cropper-actions-row">
         <button type="button" class="btn btn-secondary" id="cropperCancelBtn" style="flex: 1;">Cancelar</button>
         <button type="button" class="btn btn-primary" id="cropperApplyBtn" style="flex: 2;">✂️ Aplicar Recorte y Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Nota de Entrega de Cliente (Remito Oficial) -->
+  <div id="deliveryNoteModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-card delivery-note-card">
+      <div class="modal-header delivery-note-modal-header no-print">
+        <div>
+          <h3>📄 Nota de Entrega de Cliente</h3>
+          <p class="modal-subtitle">Comprobante y remito oficial de entrega de pedido</p>
+        </div>
+        <button class="modal-close-btn" id="closeDeliveryNoteBtn">&times;</button>
+      </div>
+
+      <!-- Hoja Oficial de la Nota de Entrega (Imprimible) -->
+      <div class="delivery-note-sheet" id="deliveryNoteSheet">
+        <!-- Encabezado de la Nota de Entrega -->
+        <div class="dn-header-row">
+          <div class="dn-brand-info">
+            <div class="dn-logo-box">
+              <span class="dn-brand-title">🐾 Kira PET love</span>
+            </div>
+            <p class="dn-store-slogan">Todo lo que tu mascota ama, al mejor precio</p>
+            <small class="dn-store-contact">Atención al Cliente: +54 9 11 0000-0000 • Tienda Oficial</small>
+          </div>
+
+          <div class="dn-status-box">
+            <div class="dn-badge-wrapper">
+              <span id="dnStatusBadge" class="dn-status-badge status-pending">🔴 PENDIENTE DE ENTREGA</span>
+            </div>
+            <div class="dn-order-id-label">NOTA DE ENTREGA N°:</div>
+            <code class="dn-order-id-val" id="dnOrderId">#ORD-000000</code>
+            <div class="dn-date-row">
+              <span>Fecha Pedido:</span>
+              <strong id="dnOrderDate">-</strong>
+            </div>
+            <div class="dn-date-row" id="dnDeliveryDateRow" style="display: none;">
+              <span>Fecha Entrega:</span>
+              <strong id="dnDeliveryDate" style="color: #15803d;">-</strong>
+            </div>
+          </div>
+        </div>
+
+        <hr class="dn-divider">
+
+        <!-- Datos del Cliente y Envío -->
+        <div class="dn-details-grid">
+          <div class="dn-info-block">
+            <h4>👤 DATOS DEL CLIENTE</h4>
+            <p><strong>Cliente:</strong> <span id="dnClientName">-</span></p>
+            <p><strong>Teléfono:</strong> <span id="dnClientPhone">-</span></p>
+            <p><strong>E-mail:</strong> <span id="dnClientEmail">-</span></p>
+          </div>
+          <div class="dn-info-block">
+            <h4>🚚 DETALLES DE LOGÍSTICA</h4>
+            <p><strong>Modalidad:</strong> <span>⚡ Envío Pet Express a Domicilio</span></p>
+            <p><strong>Estado:</strong> <strong id="dnShippingStatus" style="color: #b91c1c;">🔴 Pendiente</strong></p>
+            <p><strong>Condición:</strong> <span>Confirmado en Plataforma</span></p>
+          </div>
+        </div>
+
+        <!-- Tabla de Artículos Entregados -->
+        <div class="dn-table-wrapper">
+          <table class="dn-items-table">
+            <thead>
+              <tr>
+                <th style="width: 48px;">Foto</th>
+                <th>Producto / Descripción</th>
+                <th class="text-center" style="width: 60px;">Cant.</th>
+                <th class="text-right" style="width: 100px;">Precio Unit.</th>
+                <th class="text-right" style="width: 110px;">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody id="dnItemsTableBody">
+              <!-- Inyectado por JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Resumen de Totales -->
+        <div class="dn-totals-box">
+          <div class="dn-totals-row">
+            <span>Subtotal Productos:</span>
+            <strong id="dnSubtotalVal">$ 0</strong>
+          </div>
+          <div class="dn-totals-row">
+            <span>Costo de Envío:</span>
+            <span style="color: #15803d; font-weight: 700;">¡Bonificado / Gratis!</span>
+          </div>
+          <div class="dn-totals-row total-highlight">
+            <span>TOTAL DE LA ORDEN:</span>
+            <span class="dn-grand-total" id="dnGrandTotal">$ 0</span>
+          </div>
+        </div>
+
+        <!-- Firmas de Conformidad -->
+        <div class="dn-signature-section">
+          <div class="dn-signature-box">
+            <div class="dn-signature-line"></div>
+            <p><strong>Firma y Aclaración Receptor</strong></p>
+            <small>DNI / Documento: ___________________</small>
+          </div>
+          <div class="dn-signature-box">
+            <div class="dn-signature-line"></div>
+            <p><strong>Responsable de Entrega</strong></p>
+            <small>Kira PET love - Envíos Oficiales</small>
+          </div>
+        </div>
+
+        <div class="dn-footer-legal">
+          <p>🐾 ¡Gracias por confiar en <strong>Kira PET love</strong>! Ante cualquier consulta o garantía contáctanos con tu número de pedido.</p>
+        </div>
+      </div>
+
+      <!-- Barra de Acciones (No se imprime) -->
+      <div class="delivery-note-actions no-print">
+        <button type="button" class="btn btn-secondary" id="closeDeliveryNoteBottomBtn" style="flex: 1;">
+          Cerrar
+        </button>
+        <button type="button" class="btn btn-secondary" id="dnShareWhatsAppBtn" style="flex: 1.2;">
+          📲 WhatsApp
+        </button>
+        <button type="button" class="btn btn-primary" id="dnPrintBtn" style="flex: 1.5;">
+          🖨️ Imprimir / Guardar PDF
+        </button>
       </div>
     </div>
   </div>

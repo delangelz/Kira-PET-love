@@ -89,6 +89,8 @@ const adminBarProductsBtn = document.getElementById("adminBarProductsBtn");
 const adminBarOrdersBtn = document.getElementById("adminBarOrdersBtn");
 const adminBarUsersBtn = document.getElementById("adminBarUsersBtn");
 const adminBarOrdersCount = document.getElementById("adminBarOrdersCount");
+const adminBarMyOrdersBtn = document.getElementById("adminBarMyOrdersBtn");
+const adminBarMyOrdersCount = document.getElementById("adminBarMyOrdersCount");
 
 const exitProductsBtn = document.getElementById("exitProductsBtn");
 const exitOrdersBtn = document.getElementById("exitOrdersBtn");
@@ -113,6 +115,25 @@ const buyerActiveOrderStatus = document.getElementById("buyerActiveOrderStatus")
 const viewActiveOrderBtn = document.getElementById("viewActiveOrderBtn");
 const profileViewOrdersBtn = document.getElementById("profileViewOrdersBtn");
 const profileOrdersCount = document.getElementById("profileOrdersCount");
+
+// Modal Nota de Entrega de Cliente (Remito Oficial)
+const deliveryNoteModal = document.getElementById("deliveryNoteModal");
+const closeDeliveryNoteBtn = document.getElementById("closeDeliveryNoteBtn");
+const closeDeliveryNoteBottomBtn = document.getElementById("closeDeliveryNoteBottomBtn");
+const dnPrintBtn = document.getElementById("dnPrintBtn");
+const dnShareWhatsAppBtn = document.getElementById("dnShareWhatsAppBtn");
+const dnStatusBadge = document.getElementById("dnStatusBadge");
+const dnOrderId = document.getElementById("dnOrderId");
+const dnOrderDate = document.getElementById("dnOrderDate");
+const dnDeliveryDateRow = document.getElementById("dnDeliveryDateRow");
+const dnDeliveryDate = document.getElementById("dnDeliveryDate");
+const dnClientName = document.getElementById("dnClientName");
+const dnClientPhone = document.getElementById("dnClientPhone");
+const dnClientEmail = document.getElementById("dnClientEmail");
+const dnShippingStatus = document.getElementById("dnShippingStatus");
+const dnItemsTableBody = document.getElementById("dnItemsTableBody");
+const dnSubtotalVal = document.getElementById("dnSubtotalVal");
+const dnGrandTotal = document.getElementById("dnGrandTotal");
 
 // Modal Editar Producto
 const editProductModal = document.getElementById("editProductModal");
@@ -1687,6 +1708,7 @@ function actualizarUIUsuario() {
       adminNavHeaderBar.style.display = "flex";
       if (adminBarUsersBtn) adminBarUsersBtn.style.display = (rol === "admin") ? "inline-flex" : "none";
       if (adminBarSettingsBtn) adminBarSettingsBtn.style.display = (rol === "admin") ? "inline-flex" : "none";
+      if (adminBarMyOrdersBtn) adminBarMyOrdersBtn.style.display = "inline-flex";
       openMyOrdersBtn.style.display = "none";
       // Si la tienda está activa, mostrar también la barra de categorías para que el admin pueda filtrar
       if (storeView && storeView.style.display !== "none") {
@@ -1698,6 +1720,7 @@ function actualizarUIUsuario() {
       buyerCategoriesBar.style.display = "flex";
       adminNavHeaderBar.style.display = "none";
       if (adminBarSettingsBtn) adminBarSettingsBtn.style.display = "none";
+      if (adminBarMyOrdersBtn) adminBarMyOrdersBtn.style.display = "none";
       openMyOrdersBtn.style.display = "inline-flex";
     }
     renderizarMisCompras();
@@ -1942,7 +1965,7 @@ function ocultarTodasLasVistas() {
 }
 
 function marcarBotonAdminActivo(btn) {
-  [adminBarStoreBtn, adminBarProductsBtn, adminBarOrdersBtn, adminBarUsersBtn].forEach((b) => {
+  [adminBarStoreBtn, adminBarProductsBtn, adminBarOrdersBtn, adminBarMyOrdersBtn, adminBarUsersBtn].forEach((b) => {
     if (b) b.classList.remove("active");
   });
   if (btn) btn.classList.add("active");
@@ -1993,6 +2016,9 @@ function abrirMisCompras() {
   }
   ocultarTodasLasVistas();
   myOrdersView.style.display = "block";
+  if (currentUser && (currentUser.rol === "admin" || currentUser.rol === "vendedor")) {
+    marcarBotonAdminActivo(adminBarMyOrdersBtn);
+  }
   renderizarMisCompras();
 }
 
@@ -2000,6 +2026,7 @@ function abrirMisCompras() {
 if (adminBarStoreBtn) adminBarStoreBtn.addEventListener("click", mostrarTienda);
 if (adminBarProductsBtn) adminBarProductsBtn.addEventListener("click", mostrarMisProductos);
 if (adminBarOrdersBtn) adminBarOrdersBtn.addEventListener("click", mostrarPedidosClientes);
+if (adminBarMyOrdersBtn) adminBarMyOrdersBtn.addEventListener("click", abrirMisCompras);
 if (adminBarUsersBtn) adminBarUsersBtn.addEventListener("click", mostrarGestionUsuarios);
 
 if (exitProductsBtn) exitProductsBtn.addEventListener("click", mostrarTienda);
@@ -2702,6 +2729,164 @@ function iniciarEscuchaPedidosEnVivo() {
   });
 }
 
+// Listeners para cerrar Modal de Nota de Entrega
+if (closeDeliveryNoteBtn) {
+  closeDeliveryNoteBtn.addEventListener("click", () => {
+    if (deliveryNoteModal) deliveryNoteModal.style.display = "none";
+  });
+}
+if (closeDeliveryNoteBottomBtn) {
+  closeDeliveryNoteBottomBtn.addEventListener("click", () => {
+    if (deliveryNoteModal) deliveryNoteModal.style.display = "none";
+  });
+}
+if (deliveryNoteModal) {
+  deliveryNoteModal.addEventListener("click", (e) => {
+    if (e.target === deliveryNoteModal) {
+      deliveryNoteModal.style.display = "none";
+    }
+  });
+}
+
+// Función principal para abrir y generar la Nota de Entrega oficial
+function abrirNotaDeEntrega(order) {
+  if (!order) return;
+
+  const isDelivered = order.estado === "Entregado" || order.estado === "Completada";
+  const isCancelled = order.estado === "Cancelada";
+
+  // 1. Badge de Estado en el remito
+  if (dnStatusBadge) {
+    if (isDelivered) {
+      dnStatusBadge.className = "dn-status-badge status-delivered";
+      dnStatusBadge.innerHTML = "🟢 ENTREGADO / COMPLETADO";
+    } else if (isCancelled) {
+      dnStatusBadge.className = "dn-status-badge status-pending";
+      dnStatusBadge.innerHTML = "❌ PEDIDO CANCELADO";
+    } else {
+      dnStatusBadge.className = "dn-status-badge status-pending";
+      dnStatusBadge.innerHTML = `🔴 PENDIENTE DE ENTREGA (${order.estado || 'En Preparación'})`;
+    }
+  }
+
+  // 2. Estado de Logística
+  if (dnShippingStatus) {
+    if (isDelivered) {
+      dnShippingStatus.innerHTML = '<span style="color: #15803d; font-weight: 800;">🟢 Entregado con Éxito</span>';
+    } else if (isCancelled) {
+      dnShippingStatus.innerHTML = '<span style="color: #dc2626; font-weight: 800;">❌ Cancelado</span>';
+    } else {
+      dnShippingStatus.innerHTML = `<span style="color: #b91c1c; font-weight: 800;">🔴 Pendiente (${order.estado || 'En Gestión'})</span>`;
+    }
+  }
+
+  // 3. ID de Nota de Entrega
+  if (dnOrderId) {
+    const rawId = order.id || "000000";
+    dnOrderId.textContent = `#ORD-${rawId.slice(0, 8).toUpperCase()}`;
+  }
+
+  // 4. Fechas
+  let orderDateStr = "-";
+  if (order.fecha) {
+    try {
+      const d = order.fecha.toDate ? order.fecha.toDate() : new Date(order.fecha);
+      orderDateStr = d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    } catch (_) {}
+  }
+  if (dnOrderDate) dnOrderDate.textContent = orderDateStr;
+
+  if (dnDeliveryDateRow && dnDeliveryDate) {
+    if (isDelivered) {
+      let delivDateStr = orderDateStr;
+      if (order.fechaEntrega) {
+        try {
+          const dEnt = order.fechaEntrega.toDate ? order.fechaEntrega.toDate() : new Date(order.fechaEntrega);
+          delivDateStr = dEnt.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+        } catch (_) {}
+      }
+      dnDeliveryDate.textContent = delivDateStr;
+      dnDeliveryDateRow.style.display = "flex";
+    } else {
+      dnDeliveryDateRow.style.display = "none";
+    }
+  }
+
+  // 5. Datos del cliente
+  if (dnClientName) dnClientName.textContent = order.clienteNombre || "Cliente";
+  if (dnClientPhone) dnClientPhone.textContent = order.clienteTelefono || "Sin teléfono registrado";
+  if (dnClientEmail) dnClientEmail.textContent = order.clienteEmail || "Sin email registrado";
+
+  // 6. Artículos de la orden
+  if (dnItemsTableBody) {
+    dnItemsTableBody.innerHTML = "";
+    let subtotalCalc = 0;
+
+    (order.productos || []).forEach((p) => {
+      const cant = Number(p.cantidad) || 1;
+      const prec = Number(p.precio) || 0;
+      const lineaSubtotal = cant * prec;
+      subtotalCalc += lineaSubtotal;
+
+      let thumbHtml = '<div style="font-size: 1.4rem; text-align: center;">📦</div>';
+      if (p.imagen && (p.imagen.startsWith("data:") || p.imagen.startsWith("http"))) {
+        thumbHtml = `<img src="${p.imagen}" alt="${escapeHtml(p.titulo)}" class="dn-thumb-img">`;
+      } else if (p.imagenes && p.imagenes.length > 0) {
+        thumbHtml = `<img src="${p.imagenes[0]}" alt="${escapeHtml(p.titulo)}" class="dn-thumb-img">`;
+      } else if (p.emoji) {
+        thumbHtml = `<div style="font-size: 1.4rem; text-align: center;">${p.emoji}</div>`;
+      }
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${thumbHtml}</td>
+        <td>
+          <strong>${escapeHtml(p.titulo || "Producto")}</strong>
+          ${p.id ? `<br><small style="color: #64748b;">ID: <code>${p.id.slice(0, 8)}</code></small>` : ""}
+        </td>
+        <td class="text-center" style="font-weight: 700;">${cant}</td>
+        <td class="text-right">$ ${prec.toLocaleString("es-AR")}</td>
+        <td class="text-right" style="font-weight: 800; color: #0f766e;">$ ${lineaSubtotal.toLocaleString("es-AR")}</td>
+      `;
+      dnItemsTableBody.appendChild(tr);
+    });
+
+    const totalFinal = Number(order.total) || subtotalCalc;
+    if (dnSubtotalVal) dnSubtotalVal.textContent = `$ ${subtotalCalc.toLocaleString("es-AR")}`;
+    if (dnGrandTotal) dnGrandTotal.textContent = `$ ${totalFinal.toLocaleString("es-AR")}`;
+  }
+
+  // 7. Acciones: WhatsApp e Impresión
+  if (dnShareWhatsAppBtn) {
+    dnShareWhatsAppBtn.onclick = () => {
+      const totalNum = Number(order.total) || 0;
+      const estadoEtiqueta = isDelivered ? "🟢 ENTREGADO" : "🔴 PENDIENTE DE ENTREGA";
+      const idCorto = (order.id || "").slice(0, 8).toUpperCase();
+      const msg = `🐾 *Kira PET love - Nota de Entrega de Cliente*\n\n` +
+        `📄 *Remito N°:* #ORD-${idCorto}\n` +
+        `👤 *Cliente:* ${order.clienteNombre || "Cliente"}\n` +
+        `📦 *Estado:* ${estadoEtiqueta}\n` +
+        `💰 *Total:* $ ${totalNum.toLocaleString("es-AR")}\n\n` +
+        `¡Muchas gracias por confiar en Kira PET love! 🐶🐱`;
+      const telLimpio = (order.clienteTelefono || "").replace(/[^0-9]/g, "");
+      const url = telLimpio.length >= 8
+        ? `https://api.whatsapp.com/send?phone=${telLimpio}&text=${encodeURIComponent(msg)}`
+        : `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+      window.open(url, "_blank");
+    };
+  }
+
+  if (dnPrintBtn) {
+    dnPrintBtn.onclick = () => {
+      window.print();
+    };
+  }
+
+  if (deliveryNoteModal) {
+    deliveryNoteModal.style.display = "flex";
+  }
+}
+
 function renderizarTablaAdminPedidos() {
   if (!adminOrdersTableBody) return;
   adminOrdersTableBody.innerHTML = "";
@@ -2740,34 +2925,73 @@ function renderizarTablaAdminPedidos() {
       .map((p) => `${p.cantidad}x ${p.titulo}`)
       .join("<br>");
 
+    const isDelivered = order.estado === "Entregado" || order.estado === "Completada";
+    const statusClass = isDelivered ? "status-green" : "status-red";
+    const badgeClass = isDelivered ? "badge-status-green" : "badge-status-red";
+    const badgeLabel = isDelivered ? "🟢 Entregado" : (order.estado === "Cancelada" ? "❌ Cancelada" : "🔴 Pendiente");
+
     tr.innerHTML = `
-      <td><small>#${order.id.slice(0, 6)}</small></td>
-      <td><strong>${escapeHtml(order.clienteNombre)}</strong><br><small>${escapeHtml(order.clienteTelefono)}</small></td>
+      <td>
+        <strong style="color: #0f766e;">#${order.id.slice(0, 6)}</strong>
+      </td>
+      <td>
+        <strong>${escapeHtml(order.clienteNombre)}</strong><br>
+        <small style="color: #64748b;">${escapeHtml(order.clienteTelefono)}</small>
+      </td>
       <td><small>${itemsStr}</small></td>
       <td><strong>$ ${Number(order.total).toLocaleString("es-AR")}</strong></td>
       <td>
-        <select class="order-status-select" data-id="${order.id}">
-          <option value="Nuevo Pedido" ${order.estado === 'Nuevo Pedido' ? 'selected' : ''}>⏳ Nuevo Pedido</option>
-          <option value="En Preparación" ${order.estado === 'En Preparación' ? 'selected' : ''}>👨‍🍳 En Preparación</option>
-          <option value="En Camino" ${order.estado === 'En Camino' ? 'selected' : ''}>🚚 En Camino</option>
-          <option value="Completada" ${order.estado === 'Completada' ? 'selected' : ''}>✅ Completada</option>
+        <select class="order-status-select ${statusClass}" data-id="${order.id}">
+          <option value="Nuevo Pedido" ${order.estado === 'Nuevo Pedido' ? 'selected' : ''}>🔴 ⏳ Nuevo Pedido</option>
+          <option value="En Preparación" ${order.estado === 'En Preparación' ? 'selected' : ''}>🔴 👨‍🍳 En Preparación</option>
+          <option value="En Camino" ${order.estado === 'En Camino' ? 'selected' : ''}>🔴 🚚 En Camino</option>
+          <option value="Entregado" ${(order.estado === 'Entregado' || order.estado === 'Completada') ? 'selected' : ''}>🟢 ✅ Entregado</option>
           <option value="Cancelada" ${order.estado === 'Cancelada' ? 'selected' : ''}>❌ Cancelada</option>
         </select>
       </td>
       <td class="text-right">
-        <span style="font-size:0.78rem; font-weight:700; color:#0f766e;">Auto-guardado</span>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+          <span class="${badgeClass}" id="adminOrderBadge_${order.id}">${badgeLabel}</span>
+          <button type="button" class="btn btn-sm btn-secondary view-dn-btn" style="padding: 4px 10px; font-size: 0.78rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
+            📄 Nota de Entrega
+          </button>
+        </div>
       </td>
     `;
 
-    tr.querySelector(".order-status-select").addEventListener("change", async (e) => {
+    const statusSelect = tr.querySelector(".order-status-select");
+    statusSelect.addEventListener("change", async (e) => {
       const nuevoEstado = e.target.value;
+      const isNowDelivered = nuevoEstado === "Entregado" || nuevoEstado === "Completada";
+
+      // Actualizar inmediatamente estilos de rojo a verde (o viceversa)
+      statusSelect.className = `order-status-select ${isNowDelivered ? 'status-green' : 'status-red'}`;
+      const badgeElem = tr.querySelector(`#adminOrderBadge_${order.id}`);
+      if (badgeElem) {
+        badgeElem.className = isNowDelivered ? "badge-status-green" : "badge-status-red";
+        badgeElem.textContent = isNowDelivered ? "🟢 Entregado" : (nuevoEstado === "Cancelada" ? "❌ Cancelada" : "🔴 Pendiente");
+      }
+
+      order.estado = nuevoEstado;
+      const updateData = { estado: nuevoEstado };
+      if (isNowDelivered && !order.fechaEntrega) {
+        updateData.fechaEntrega = firebase.firestore.FieldValue.serverTimestamp();
+      }
+
       try {
-        await window.db.collection(ORDERS_COLLECTION).doc(order.id).update({ estado: nuevoEstado });
+        await window.db.collection(ORDERS_COLLECTION).doc(order.id).update(updateData);
         showToast(`✅ Pedido #${order.id.slice(0, 6)} actualizado a: ${nuevoEstado}`);
       } catch (err) {
         showToast(`❌ Error: ${err.message}`);
       }
     });
+
+    const dnBtn = tr.querySelector(".view-dn-btn");
+    if (dnBtn) {
+      dnBtn.addEventListener("click", () => {
+        abrirNotaDeEntrega(order);
+      });
+    }
 
     adminOrdersTableBody.appendChild(tr);
   });
@@ -2778,9 +3002,10 @@ function renderizarMisCompras() {
 
   const misPedidos = allOrders.filter((o) => o.clienteEmail === currentUser.email);
   if (profileOrdersCount) profileOrdersCount.textContent = misPedidos.length;
+  if (adminBarMyOrdersCount) adminBarMyOrdersCount.textContent = misPedidos.length;
 
-  const ordenesActivas = misPedidos.filter((o) => o.estado !== "Completada" && o.estado !== "Cancelada");
-  const ordenesCompletadas = misPedidos.filter((o) => o.estado === "Completada" || o.estado === "Cancelada");
+  const ordenesActivas = misPedidos.filter((o) => o.estado !== "Entregado" && o.estado !== "Completada" && o.estado !== "Cancelada");
+  const ordenesCompletadas = misPedidos.filter((o) => o.estado === "Entregado" || o.estado === "Completada" || o.estado === "Cancelada");
 
   // 1. Banner en la tienda si hay orden en curso
   if (buyerActiveOrderBanner && buyerActiveOrderStatus) {
@@ -2802,9 +3027,9 @@ function renderizarMisCompras() {
 
         const estado = order.estado || "Nuevo Pedido";
         const isP1 = true;
-        const isP2 = estado === "En Preparación" || estado === "En Camino" || estado === "Completada";
-        const isP3 = estado === "En Camino" || estado === "Completada";
-        const isP4 = estado === "Completada";
+        const isP2 = estado === "En Preparación" || estado === "En Camino" || estado === "Entregado" || estado === "Completada";
+        const isP3 = estado === "En Camino" || estado === "Entregado" || estado === "Completada";
+        const isP4 = estado === "Entregado" || estado === "Completada";
 
         const items = (order.productos || []).map((p) => `${p.cantidad}x ${p.titulo}`).join(", ");
 
@@ -2815,8 +3040,8 @@ function renderizarMisCompras() {
               <p style="color: #64748b; font-size: 0.9rem; margin-top: 2px;">${items}</p>
             </div>
             <div style="text-align: right;">
-              <span class="role-badge" style="background:#ccfbf1; color:#0f766e; font-size:0.9rem; padding:6px 14px;">
-                Estado: ${estado}
+              <span class="badge-status-red" style="font-size: 0.88rem; padding: 6px 14px;">
+                🔴 Pendiente (${estado})
               </span>
               <div style="font-size: 1.25rem; font-weight: 800; color: #0f766e; margin-top: 4px;">
                 $ ${Number(order.total).toLocaleString("es-AR")}
@@ -2840,13 +3065,26 @@ function renderizarMisCompras() {
             </div>
             <div class="tracker-step ${isP4 ? 'completed' : ''}">
               <div class="step-circle">4</div>
-              <div class="step-label">Completada</div>
+              <div class="step-label">Entregado</div>
             </div>
           </div>
-          <p style="font-size: 0.85rem; color: #0f766e; font-weight: 700; text-align: center; margin-top: 8px;">
-            ℹ️ Tu pedido estará aquí hasta que el administrador lo marque como completado.
-          </p>
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 14px; border-top: 1px solid #e2e8f0; padding-top: 10px;">
+            <p style="font-size: 0.85rem; color: #0f766e; font-weight: 700; margin: 0;">
+              ℹ️ Tu pedido pasará a verde cuando sea entregado por el repartidor.
+            </p>
+            <button type="button" class="btn btn-secondary btn-sm active-dn-btn" style="font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+              📄 Ver Nota de Entrega
+            </button>
+          </div>
         `;
+
+        const btn = div.querySelector(".active-dn-btn");
+        if (btn) {
+          btn.addEventListener("click", () => {
+            abrirNotaDeEntrega(order);
+          });
+        }
+
         myActiveOrdersSection.appendChild(div);
       });
     }
@@ -2872,22 +3110,39 @@ function renderizarMisCompras() {
       div.style.borderBottom = "1px solid #e2e8f0";
 
       const items = (ped.productos || []).map((p) => `${p.cantidad}x ${p.titulo}`).join(", ");
-      const isCompletada = ped.estado === "Completada";
+      const isDelivered = ped.estado === "Entregado" || ped.estado === "Completada";
+      const isCancelled = ped.estado === "Cancelada";
+
+      let statusBadgeHtml = '<span class="badge-status-red">🔴 Pendiente de Entrega</span>';
+      if (isDelivered) {
+        statusBadgeHtml = '<span class="badge-status-green">🟢 Entregado con Éxito</span>';
+      } else if (isCancelled) {
+        statusBadgeHtml = '<span style="color:#dc2626; font-weight:800; font-size:0.82rem;">❌ Cancelado</span>';
+      }
 
       div.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
           <div>
-            <strong>Pedido #${ped.id.slice(0, 6)}</strong>
+            <strong style="font-size: 1.05rem; color: #0f766e;">Pedido #${ped.id.slice(0, 6)}</strong>
             <p style="color: #64748b; font-size: 0.9rem; margin-top: 2px;">${items}</p>
           </div>
-          <div style="text-align:right;">
-            <div style="font-size: 1.15rem; font-weight:800; color:#0f766e;">$ ${Number(ped.total).toLocaleString("es-AR")}</div>
-            <span style="font-size: 0.82rem; font-weight:700; color: ${isCompletada ? '#059669' : '#0f766e'};">
-              ${isCompletada ? '✅ Completada' : '⏳ ' + (ped.estado || 'Procesando')}
-            </span>
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+            <div style="font-size: 1.15rem; font-weight: 800; color: #0f766e;">$ ${Number(ped.total).toLocaleString("es-AR")}</div>
+            ${statusBadgeHtml}
+            <button type="button" class="btn btn-sm btn-secondary history-dn-btn" style="padding: 4px 10px; font-size: 0.78rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+              📄 Ver Nota de Entrega
+            </button>
           </div>
         </div>
       `;
+
+      const histBtn = div.querySelector(".history-dn-btn");
+      if (histBtn) {
+        histBtn.addEventListener("click", () => {
+          abrirNotaDeEntrega(ped);
+        });
+      }
+
       myOrdersListContainer.appendChild(div);
     });
   }
