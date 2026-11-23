@@ -106,10 +106,20 @@ const adminBarNotesCount = document.getElementById("adminBarNotesCount");
 const adminBarMyOrdersBtn = document.getElementById("adminBarMyOrdersBtn");
 const adminBarMyOrdersCount = document.getElementById("adminBarMyOrdersCount");
 
-// Menú desplegable en Barra de Navegación de Admin
-const adminDropdownContainer = document.getElementById("adminDropdownContainer");
-const adminBarMoreDropdownBtn = document.getElementById("adminBarMoreDropdownBtn");
-const adminBarMoreDropdownMenu = document.getElementById("adminBarMoreDropdownMenu");
+// Menús desplegables en Barra de Navegación de Admin (Clientes y Configuración de Cuenta)
+const adminClientsDropdownContainer = document.getElementById("adminClientsDropdownContainer");
+const adminBarClientsDropdownBtn = document.getElementById("adminBarClientsDropdownBtn");
+const adminBarClientsDropdownMenu = document.getElementById("adminBarClientsDropdownMenu");
+
+const adminSettingsDropdownContainer = document.getElementById("adminSettingsDropdownContainer");
+const adminBarSettingsDropdownBtn = document.getElementById("adminBarSettingsDropdownBtn");
+const adminBarSettingsDropdownMenu = document.getElementById("adminBarSettingsDropdownMenu");
+
+const adminBarProfileBtn = document.getElementById("adminBarProfileBtn");
+
+// Precios de compra / costo de producto
+const prodCostPrice = document.getElementById("prodCostPrice");
+const editProdCostPrice = document.getElementById("editProdCostPrice");
 
 const exitProductsBtn = document.getElementById("exitProductsBtn");
 const exitOrdersBtn = document.getElementById("exitOrdersBtn");
@@ -1687,9 +1697,19 @@ if (storeSettingsForm) {
 
 if (adminBarSettingsBtn) {
   adminBarSettingsBtn.addEventListener("click", () => {
-    if (adminBarMoreDropdownMenu) adminBarMoreDropdownMenu.style.display = "none";
-    if (adminBarMoreDropdownBtn) adminBarMoreDropdownBtn.classList.remove("active");
+    cerrarTodosLosDropdownsAdmin();
     storeSettingsModal.style.display = "flex";
+  });
+}
+if (adminBarProfileBtn) {
+  adminBarProfileBtn.addEventListener("click", () => {
+    cerrarTodosLosDropdownsAdmin();
+    if (!currentUser) return;
+    if (profName) profName.value = currentUser.nombre || "";
+    if (profEmail) profEmail.value = currentUser.email || "";
+    if (profPhone) profPhone.value = currentUser.telefono || "";
+    if (profPassword) profPassword.value = "";
+    if (profileModal) profileModal.style.display = "flex";
   });
 }
 if (closeStoreSettingsBtn) {
@@ -1792,18 +1812,23 @@ function actualizarUIUsuario() {
     userLoggedIn.style.display = "flex";
     userNameNav.textContent = currentUser.nombre;
 
-    const rol = currentUser.rol || "comprador";
+    const rol = (currentUser.rol || "comprador").toLowerCase();
+    const isStaff = rol === "admin" || rol === "administrador" || rol === "vendedor";
+    const isAdmin = rol === "admin" || rol === "administrador";
     userRoleBadge.textContent = rol;
     userRoleBadge.className = `role-badge role-${rol}`;
 
     // Si es Admin o Vendedor, se activan sus botones directamente en la barra superior señalada
-    if (rol === "admin" || rol === "vendedor") {
+    if (isStaff) {
       adminNavHeaderBar.style.display = "flex";
-      if (adminDropdownContainer) adminDropdownContainer.style.display = "inline-block";
-      if (adminBarUsersBtn) adminBarUsersBtn.style.display = (rol === "admin") ? "flex" : "none";
-      if (adminBarSettingsBtn) adminBarSettingsBtn.style.display = (rol === "admin") ? "flex" : "none";
-      if (adminBarStatsBtn) adminBarStatsBtn.style.display = (rol === "admin") ? "inline-flex" : "none";
-      if (adminBarNotesBtn) adminBarNotesBtn.style.display = (rol === "admin" || rol === "vendedor") ? "inline-flex" : "none";
+      if (adminClientsDropdownContainer) adminClientsDropdownContainer.style.display = "inline-block";
+      if (adminSettingsDropdownContainer) adminSettingsDropdownContainer.style.display = "inline-block";
+      if (adminBarOrdersBtn) adminBarOrdersBtn.style.display = "flex";
+      if (adminBarUsersBtn) adminBarUsersBtn.style.display = isAdmin ? "flex" : "none";
+      if (adminBarSettingsBtn) adminBarSettingsBtn.style.display = "flex";
+      if (adminBarProfileBtn) adminBarProfileBtn.style.display = "flex";
+      if (adminBarStatsBtn) adminBarStatsBtn.style.display = "inline-flex";
+      if (adminBarNotesBtn) adminBarNotesBtn.style.display = "inline-flex";
       if (adminBarMyOrdersBtn) adminBarMyOrdersBtn.style.display = "flex";
       openMyOrdersBtn.style.display = "none";
       // Si la tienda está activa, mostrar también la barra de categorías para que el admin pueda filtrar
@@ -1817,11 +1842,10 @@ function actualizarUIUsuario() {
     } else {
       buyerCategoriesBar.style.display = "flex";
       adminNavHeaderBar.style.display = "none";
-      if (adminDropdownContainer) adminDropdownContainer.style.display = "none";
-      if (adminBarSettingsBtn) adminBarSettingsBtn.style.display = "none";
+      if (adminClientsDropdownContainer) adminClientsDropdownContainer.style.display = "none";
+      if (adminSettingsDropdownContainer) adminSettingsDropdownContainer.style.display = "none";
       if (adminBarStatsBtn) adminBarStatsBtn.style.display = "none";
       if (adminBarNotesBtn) adminBarNotesBtn.style.display = "none";
-      if (adminBarMyOrdersBtn) adminBarMyOrdersBtn.style.display = "none";
       openMyOrdersBtn.style.display = "inline-flex";
       if (floatingLeftCartBtn) floatingLeftCartBtn.style.display = "flex";
     }
@@ -1831,8 +1855,8 @@ function actualizarUIUsuario() {
     userLoggedIn.style.display = "none";
     buyerCategoriesBar.style.display = "flex";
     adminNavHeaderBar.style.display = "none";
-    if (adminDropdownContainer) adminDropdownContainer.style.display = "none";
-    if (adminBarSettingsBtn) adminBarSettingsBtn.style.display = "none";
+    if (adminClientsDropdownContainer) adminClientsDropdownContainer.style.display = "none";
+    if (adminSettingsDropdownContainer) adminSettingsDropdownContainer.style.display = "none";
     if (buyerActiveOrderBanner) buyerActiveOrderBanner.style.display = "none";
     if (floatingLeftCartBtn) floatingLeftCartBtn.style.display = "flex";
   }
@@ -2071,20 +2095,31 @@ function ocultarTodasLasVistas() {
   }
 }
 
+function cerrarTodosLosDropdownsAdmin() {
+  if (adminBarClientsDropdownMenu) adminBarClientsDropdownMenu.style.display = "none";
+  if (adminBarClientsDropdownBtn) adminBarClientsDropdownBtn.classList.remove("active");
+  if (adminBarSettingsDropdownMenu) adminBarSettingsDropdownMenu.style.display = "none";
+  if (adminBarSettingsDropdownBtn) adminBarSettingsDropdownBtn.classList.remove("active");
+}
+
 function marcarBotonAdminActivo(btn) {
-  [adminBarStoreBtn, adminBarProductsBtn, adminBarOrdersBtn, adminBarStatsBtn, adminBarNotesBtn, adminBarMyOrdersBtn, adminBarUsersBtn, adminBarMoreDropdownBtn].forEach((b) => {
+  [adminBarStoreBtn, adminBarProductsBtn, adminBarStatsBtn, adminBarNotesBtn, adminBarClientsDropdownBtn, adminBarSettingsDropdownBtn].forEach((b) => {
     if (b) b.classList.remove("active");
   });
   if (btn) {
-    btn.classList.add("active");
-    if (btn === adminBarUsersBtn || btn === adminBarMyOrdersBtn || btn === adminBarSettingsBtn) {
-      if (adminBarMoreDropdownBtn) adminBarMoreDropdownBtn.classList.add("active");
+    if (btn === adminBarOrdersBtn || btn === adminBarUsersBtn || btn === adminBarMyOrdersBtn) {
+      if (adminBarClientsDropdownBtn) adminBarClientsDropdownBtn.classList.add("active");
+    } else if (btn === adminBarSettingsBtn || btn === adminBarProfileBtn) {
+      if (adminBarSettingsDropdownBtn) adminBarSettingsDropdownBtn.classList.add("active");
+    } else {
+      btn.classList.add("active");
     }
   }
 }
 
 function mostrarTienda() {
   ocultarTodasLasVistas();
+  cerrarTodosLosDropdownsAdmin();
   storeView.style.display = "block";
   marcarBotonAdminActivo(adminBarStoreBtn);
   if (buyerCategoriesBar) buyerCategoriesBar.style.display = "flex";
@@ -2102,6 +2137,7 @@ function mostrarTienda() {
 
 function mostrarMisProductos() {
   ocultarTodasLasVistas();
+  cerrarTodosLosDropdownsAdmin();
   productsManagementView.style.display = "block";
   marcarBotonAdminActivo(adminBarProductsBtn);
   renderizarTablaAdminProductos();
@@ -2109,6 +2145,7 @@ function mostrarMisProductos() {
 
 function mostrarPedidosClientes() {
   ocultarTodasLasVistas();
+  cerrarTodosLosDropdownsAdmin();
   ordersManagementView.style.display = "block";
   marcarBotonAdminActivo(adminBarOrdersBtn);
   renderizarTablaAdminPedidos();
@@ -2116,8 +2153,7 @@ function mostrarPedidosClientes() {
 
 function mostrarGestionUsuarios() {
   ocultarTodasLasVistas();
-  if (adminBarMoreDropdownMenu) adminBarMoreDropdownMenu.style.display = "none";
-  if (adminBarMoreDropdownBtn) adminBarMoreDropdownBtn.classList.remove("active");
+  cerrarTodosLosDropdownsAdmin();
   usersManagementView.style.display = "block";
   marcarBotonAdminActivo(adminBarUsersBtn);
   renderizarTablaUsuariosAdmin();
@@ -2125,6 +2161,7 @@ function mostrarGestionUsuarios() {
 
 function mostrarMetricasYGanancias() {
   ocultarTodasLasVistas();
+  cerrarTodosLosDropdownsAdmin();
   if (analyticsManagementView) analyticsManagementView.style.display = "block";
   marcarBotonAdminActivo(adminBarStatsBtn);
   actualizarPanelMetricasYGanancias();
@@ -2132,6 +2169,7 @@ function mostrarMetricasYGanancias() {
 
 function mostrarMisNotas() {
   ocultarTodasLasVistas();
+  cerrarTodosLosDropdownsAdmin();
   if (notesManagementView) notesManagementView.style.display = "block";
   marcarBotonAdminActivo(adminBarNotesBtn);
   renderizarTableroNotas();
@@ -2144,8 +2182,7 @@ function abrirMisCompras() {
     return;
   }
   ocultarTodasLasVistas();
-  if (adminBarMoreDropdownMenu) adminBarMoreDropdownMenu.style.display = "none";
-  if (adminBarMoreDropdownBtn) adminBarMoreDropdownBtn.classList.remove("active");
+  cerrarTodosLosDropdownsAdmin();
   myOrdersView.style.display = "block";
   if (currentUser && (currentUser.rol === "admin" || currentUser.rol === "vendedor")) {
     marcarBotonAdminActivo(adminBarMyOrdersBtn);
@@ -2153,21 +2190,40 @@ function abrirMisCompras() {
   renderizarMisCompras();
 }
 
-// Menú desplegable "Más Opciones" en la barra superior
-if (adminBarMoreDropdownBtn && adminBarMoreDropdownMenu) {
-  adminBarMoreDropdownBtn.addEventListener("click", (e) => {
+// Menú desplegable 1: Clientes y Pedidos
+if (adminBarClientsDropdownBtn && adminBarClientsDropdownMenu) {
+  adminBarClientsDropdownBtn.addEventListener("click", (e) => {
     e.stopPropagation();
-    const isVisible = adminBarMoreDropdownMenu.style.display === "flex";
-    adminBarMoreDropdownMenu.style.display = isVisible ? "none" : "flex";
-    adminBarMoreDropdownBtn.classList.toggle("active", !isVisible);
-  });
-  document.addEventListener("click", (e) => {
-    if (adminDropdownContainer && !adminDropdownContainer.contains(e.target)) {
-      adminBarMoreDropdownMenu.style.display = "none";
-      adminBarMoreDropdownBtn.classList.remove("active");
+    const isVisible = adminBarClientsDropdownMenu.style.display === "flex";
+    cerrarTodosLosDropdownsAdmin();
+    if (!isVisible) {
+      adminBarClientsDropdownMenu.style.display = "flex";
+      adminBarClientsDropdownBtn.classList.add("active");
     }
   });
 }
+
+// Menú desplegable 2: Configuración de Cuenta
+if (adminBarSettingsDropdownBtn && adminBarSettingsDropdownMenu) {
+  adminBarSettingsDropdownBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const isVisible = adminBarSettingsDropdownMenu.style.display === "flex";
+    cerrarTodosLosDropdownsAdmin();
+    if (!isVisible) {
+      adminBarSettingsDropdownMenu.style.display = "flex";
+      adminBarSettingsDropdownBtn.classList.add("active");
+    }
+  });
+}
+
+// Clic fuera para cerrar ambos menús
+document.addEventListener("click", (e) => {
+  const insideClients = adminClientsDropdownContainer && adminClientsDropdownContainer.contains(e.target);
+  const insideSettings = adminSettingsDropdownContainer && adminSettingsDropdownContainer.contains(e.target);
+  if (!insideClients && !insideSettings) {
+    cerrarTodosLosDropdownsAdmin();
+  }
+});
 
 // Botones de la barra superior
 if (adminBarStoreBtn) adminBarStoreBtn.addEventListener("click", mostrarTienda);
@@ -2206,6 +2262,7 @@ newProductForm.addEventListener("submit", async (e) => {
   const marca = (prodBrandEl ? prodBrandEl.value.trim() : "") || "Kira Pet Oficial";
   const categoria = document.getElementById("prodCategory").value;
   const precio = Number(document.getElementById("prodPrice").value);
+  const precioCompra = Math.max(0, Number(prodCostPrice ? prodCostPrice.value : 0) || 0);
   const stock = Number(document.getElementById("prodStock").value);
   const descripcion = document.getElementById("prodDesc").value.trim();
   const prodFeaturedEl = document.getElementById("prodFeatured");
@@ -2251,6 +2308,7 @@ newProductForm.addEventListener("submit", async (e) => {
       marca,
       categoria,
       precio,
+      precioCompra,
       stock,
       imagenes: imagenesFinales,
       imagen: imagenPrincipal,
@@ -2364,6 +2422,9 @@ function renderizarTablaAdminProductos() {
   filtrados.forEach((prod) => {
     const mediaVal = prod.imagen || prod.emoji || "🐾";
     const formattedPrice = Number(prod.precio).toLocaleString("es-AR");
+    const precioCompraNum = Number(prod.precioCompra) || 0;
+    const gananciaUnitaria = Math.max(0, prod.precio - precioCompraNum);
+    const margenPct = prod.precio > 0 ? Math.round((gananciaUnitaria / prod.precio) * 100) : 0;
     const isFeatured = prod.destacado !== false;
 
     // --- 1. RENDERIZAR EN LA VISTA DE TARJETAS (COMO EN LA TIENDA) ---
@@ -2386,7 +2447,10 @@ function renderizarTablaAdminProductos() {
           <small style="color: var(--text-muted); font-size: 0.78rem; display: block; margin-bottom: 4px;">Marca: ${escapeHtml(prod.marca || "Kira Pet Oficial")}</small>
           
           <div class="admin-card-price-stock">
-            <div class="admin-card-price">$ ${formattedPrice}</div>
+            <div>
+              <div class="admin-card-price">Venta: $ ${formattedPrice}</div>
+              ${precioCompraNum > 0 ? `<small style="color: #64748b; font-size: 0.74rem; display: block; margin-top: 1px;">Costo: $ ${precioCompraNum.toLocaleString('es-AR')} • <strong style="color: #0f766e;">+$ ${gananciaUnitaria.toLocaleString('es-AR')} (${margenPct}%)</strong></small>` : ''}
+            </div>
             <div class="admin-card-stock ${prod.stock <= 3 ? 'low-stock' : ''}">Stock: ${prod.stock} u.</div>
           </div>
           
@@ -2464,7 +2528,10 @@ function renderizarTablaAdminProductos() {
           </div>
         </td>
         <td>${escapeHtml(prod.categoria)}</td>
-        <td><strong>$ ${formattedPrice}</strong></td>
+        <td>
+          <strong>$ ${formattedPrice}</strong>
+          ${precioCompraNum > 0 ? `<br><small style="color: #64748b; font-size: 0.74rem;">Costo: $ ${precioCompraNum.toLocaleString('es-AR')}<br><strong style="color: #0f766e;">Ganancia: $ ${gananciaUnitaria.toLocaleString('es-AR')} (${margenPct}%)</strong></small>` : ''}
+        </td>
         <td>${prod.stock} u.</td>
         <td class="text-right">
           <button class="btn btn-sm btn-secondary btn-toggle-feat" data-id="${prod.id}" title="${isFeatured ? 'Quitar del carrusel' : 'Destacar en carrusel'}" style="margin-right:4px;">
@@ -2504,6 +2571,7 @@ function abrirFormularioEditar(prod) {
   if (editBrandEl) editBrandEl.value = prod.marca || "Kira Pet Oficial";
   editProdCategory.value = prod.categoria || "Alimentos";
   editProdPrice.value = prod.precio || 0;
+  if (editProdCostPrice) editProdCostPrice.value = prod.precioCompra || "";
   editProdStock.value = prod.stock || 0;
   editProdDesc.value = prod.descripcion || "";
   const editFeaturedEl = document.getElementById("editProdFeatured");
@@ -2562,6 +2630,7 @@ if (editProductForm) {
     const marca = (editBrandEl ? editBrandEl.value.trim() : "") || "Kira Pet Oficial";
     const categoria = editProdCategory.value;
     const precio = Number(editProdPrice.value);
+    const precioCompra = Math.max(0, Number(editProdCostPrice ? editProdCostPrice.value : 0) || 0);
     const stock = Number(editProdStock.value);
     const descripcion = editProdDesc.value.trim();
     const editFeaturedEl = document.getElementById("editProdFeatured");
@@ -2582,6 +2651,7 @@ if (editProductForm) {
         marca,
         categoria,
         precio,
+        precioCompra,
         stock,
         imagenes: imagenesFinales,
         imagen: imagenPrincipal,
@@ -3573,6 +3643,7 @@ function actualizarPanelMetricasYGanancias() {
   let pedidosPendientes = 0;
   let pedidosCancelados = 0;
   let totalUnidadesVendidas = 0;
+  let totalCostoProductos = 0;
   const mapaProductos = {};
   const mapaMensual = {};
 
@@ -3603,11 +3674,16 @@ function actualizarPanelMetricasYGanancias() {
       }
     }
 
-    // Unidades y productos vendidos
+    // Unidades y productos vendidos con costo de compra
     (order.productos || []).forEach((p) => {
       const qty = Number(p.cantidad) || 1;
       const sub = Number(p.precio) * qty || 0;
       totalUnidadesVendidas += qty;
+
+      const prodOriginal = storeProducts.find((sp) => sp.id === p.id || (sp.titulo && sp.titulo.toLowerCase() === (p.titulo || "").toLowerCase()));
+      const costoUnitario = Number(p.precioCompra || (prodOriginal ? prodOriginal.precioCompra : 0)) || 0;
+      const costoLinea = costoUnitario > 0 ? (costoUnitario * qty) : (sub * (1 - (currentStatsMargin / 100)));
+      totalCostoProductos += costoLinea;
 
       const tit = p.titulo || "Producto";
       if (!mapaProductos[tit]) {
@@ -3615,6 +3691,7 @@ function actualizarPanelMetricasYGanancias() {
           titulo: tit,
           cantidad: 0,
           total: 0,
+          costoTotal: 0,
           imagen: p.imagen || (p.imagenes && p.imagenes[0]) || "",
           emoji: p.emoji || "🐾",
           id: p.id || ""
@@ -3622,6 +3699,7 @@ function actualizarPanelMetricasYGanancias() {
       }
       mapaProductos[tit].cantidad += qty;
       mapaProductos[tit].total += sub;
+      mapaProductos[tit].costoTotal += costoLinea;
     });
 
     // Agrupación mensual
@@ -3640,13 +3718,14 @@ function actualizarPanelMetricasYGanancias() {
     }
   });
 
-  const gananciaNetaEstimada = totalVentas * (currentStatsMargin / 100);
+  const gananciaReal = Math.max(0, totalVentas - totalCostoProductos);
+  const rentabilidadReal = totalVentas > 0 ? Math.round((gananciaReal / totalVentas) * 100) : currentStatsMargin;
   const ticketPromedio = currentStatsOrders.length > 0 ? (totalVentas / currentStatsOrders.length) : 0;
 
   if (kpiTotalSales) kpiTotalSales.textContent = `$ ${Math.round(totalVentas).toLocaleString("es-AR")}`;
   if (kpiSalesSub) kpiSalesSub.textContent = `Ventas Entregadas: $ ${Math.round(totalVentasEntregadas).toLocaleString("es-AR")}`;
-  if (kpiTotalProfit) kpiTotalProfit.textContent = `$ ${Math.round(gananciaNetaEstimada).toLocaleString("es-AR")}`;
-  if (kpiProfitSub) kpiProfitSub.textContent = `Margen aplicado: ${currentStatsMargin}% • Costo est.: $ ${Math.round(totalVentas - gananciaNetaEstimada).toLocaleString("es-AR")}`;
+  if (kpiTotalProfit) kpiTotalProfit.textContent = `$ ${Math.round(gananciaReal).toLocaleString("es-AR")}`;
+  if (kpiProfitSub) kpiProfitSub.textContent = `Costo mercadería: $ ${Math.round(totalCostoProductos).toLocaleString("es-AR")} • Rentabilidad: ${rentabilidadReal}%`;
   if (kpiTotalOrders) kpiTotalOrders.textContent = currentStatsOrders.length;
   if (kpiOrdersSub) kpiOrdersSub.textContent = `🟢 ${pedidosEntregados} Entregados • 🔴 ${pedidosPendientes} Pendientes${pedidosCancelados ? ` • ❌ ${pedidosCancelados} Cancelados` : ''}`;
   if (kpiAverageTicket) kpiAverageTicket.textContent = `$ ${Math.round(ticketPromedio).toLocaleString("es-AR")}`;

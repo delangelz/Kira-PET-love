@@ -93,34 +93,44 @@
         <button class="cat-pill" data-cat="Salud">💊 Farmacia & Cuidado</button>
       </div>
 
-      <!-- 2. Para el Administrador y Vendedor: Directamente en la barra con menú desplegable -->
+      <!-- 2. Para el Administrador y Vendedor: Directamente en la barra con menús desplegables -->
       <div id="adminNavHeaderBar" class="header-container categories-bar" style="display: none;">
         <button class="admin-nav-pill active" id="adminBarStoreBtn">🛍️ Ver Tienda</button>
         <button class="admin-nav-pill" id="adminBarProductsBtn">📦 Mis Productos</button>
-        <button class="admin-nav-pill" id="adminBarOrdersBtn">
-          📋 Pedidos Clientes (<span id="adminBarOrdersCount">0</span>)
-        </button>
-        <button class="admin-nav-pill" id="adminBarStatsBtn">
-          📊 Ganancias y Gráficas
-        </button>
+        <button class="admin-nav-pill" id="adminBarStatsBtn">📊 Ganancias y Gráficas</button>
         <button class="admin-nav-pill" id="adminBarNotesBtn">
           📝 Mis Notas (<span id="adminBarNotesCount">0</span>)
         </button>
 
-        <!-- Menú Desplegable: Configuración de Logo, Usuarios y Mis Compras -->
-        <div class="admin-dropdown-container" id="adminDropdownContainer">
-          <button type="button" class="admin-nav-pill admin-dropdown-trigger" id="adminBarMoreDropdownBtn">
-            ⚙️ Más Opciones ▾
+        <!-- 1. Menú Desplegable: Clientes y Pedidos -->
+        <div class="admin-dropdown-container" id="adminClientsDropdownContainer">
+          <button type="button" class="admin-nav-pill admin-dropdown-trigger" id="adminBarClientsDropdownBtn">
+            👥 Clientes ▾
           </button>
-          <div class="admin-dropdown-menu" id="adminBarMoreDropdownMenu" style="display: none;">
-            <button type="button" class="admin-dropdown-item admin-only-pill" id="adminBarSettingsBtn">
-              ⚙️ Configurar Logo y Tienda
+          <div class="admin-dropdown-menu" id="adminBarClientsDropdownMenu" style="display: none;">
+            <button type="button" class="admin-dropdown-item" id="adminBarOrdersBtn">
+              📋 Pedidos Clientes (<span id="adminBarOrdersCount">0</span>)
             </button>
             <button type="button" class="admin-dropdown-item admin-only-pill" id="adminBarUsersBtn">
-              👥 Gestión de Usuarios
+              👥 Mis Clientes / Usuarios
             </button>
             <button type="button" class="admin-dropdown-item" id="adminBarMyOrdersBtn">
               🛍️ Mis Compras (<span id="adminBarMyOrdersCount">0</span>)
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. Menú Desplegable: Configuración de Cuenta -->
+        <div class="admin-dropdown-container" id="adminSettingsDropdownContainer">
+          <button type="button" class="admin-nav-pill admin-dropdown-trigger" id="adminBarSettingsDropdownBtn">
+            ⚙️ Configuración de Cuenta ▾
+          </button>
+          <div class="admin-dropdown-menu menu-right" id="adminBarSettingsDropdownMenu" style="display: none;">
+            <button type="button" class="admin-dropdown-item" id="adminBarSettingsBtn">
+              ⚙️ Configurar Logo y Tienda
+            </button>
+            <button type="button" class="admin-dropdown-item" id="adminBarProfileBtn">
+              👤 Mi Perfil de Administrador
             </button>
           </div>
         </div>
@@ -243,8 +253,12 @@
 
           <div class="form-row">
             <div class="form-group col-1">
-              <label>Precio ($) *</label>
+              <label>Precio de Venta ($) *</label>
               <input type="number" id="prodPrice" placeholder="Ej. 18500" required min="1">
+            </div>
+            <div class="form-group col-1">
+              <label>Precio de Costo / Compra ($)</label>
+              <input type="number" id="prodCostPrice" placeholder="Ej. 11000" min="0" step="50" title="Costo al que compraste el producto para calcular tus ganancias reales">
             </div>
             <div class="form-group col-1">
               <label>Stock *</label>
@@ -925,8 +939,12 @@
 
         <div class="form-row">
           <div class="form-group col-1">
-            <label>Precio ($) *</label>
+            <label>Precio de Venta ($) *</label>
             <input type="number" id="editProdPrice" required min="1">
+          </div>
+          <div class="form-group col-1">
+            <label>Precio de Costo / Compra ($)</label>
+            <input type="number" id="editProdCostPrice" min="0" step="50" placeholder="Ej. 11000" title="Costo al que compraste el producto">
           </div>
           <div class="form-group col-1">
             <label>Stock *</label>
