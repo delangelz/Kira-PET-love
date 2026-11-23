@@ -962,7 +962,7 @@ if (successViewInAdminBtn) {
 // ==============================================================
 // 1. INICIALIZACIÓN
 // ==============================================================
-window.addEventListener("DOMContentLoaded", async () => {
+function inicializarApp() {
   actualizarUIUsuario();
   actualizarBadgeCarrito();
 
@@ -971,7 +971,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     statusText.textContent = "🟢 Conectado con Kira PET love en tiempo real";
     
     // Asegurar cuenta admin inicial sólo si no existe ningún admin
-    await asegurarCuentaAdminPorDefecto();
+    asegurarCuentaAdminPorDefecto();
 
     // Oyentes en vivo
     iniciarEscuchaAjustesTienda();
@@ -983,7 +983,13 @@ window.addEventListener("DOMContentLoaded", async () => {
     connectionStatus.className = "status-indicator error";
     statusText.textContent = "Revisa las claves en firebase-config.js";
   }
-});
+}
+
+if (document.readyState === "loading") {
+  window.addEventListener("DOMContentLoaded", inicializarApp);
+} else {
+  inicializarApp();
+}
 
 // Cuenta administradora inicial segura
 async function asegurarCuentaAdminPorDefecto() {
@@ -2161,8 +2167,6 @@ if (adminBarMoreDropdownBtn && adminBarMoreDropdownMenu) {
       adminBarMoreDropdownBtn.classList.remove("active");
     }
   });
-}
-  renderizarMisCompras();
 }
 
 // Botones de la barra superior
