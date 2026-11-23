@@ -3691,3 +3691,158 @@ html, body {
   font-size: 0.72rem;
   color: #94a3b8;
 }
+
+/* ==============================================================
+   MENÚ DESPLEGABLE EN BARRA ADMIN (LOGO Y TIENDA, USUARIOS, COMPRAS)
+   ============================================================== */
+.admin-dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+.admin-dropdown-trigger {
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  color: #ffffff !important;
+  font-weight: 800;
+}
+.admin-dropdown-trigger:hover,
+.admin-dropdown-trigger.active {
+  background: #ffffff !important;
+  color: #0f766e !important;
+}
+
+.admin-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #ffffff;
+  border: 1.5px solid #0f766e;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  min-width: 240px;
+  z-index: 1050;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-dropdown-item {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1e293b;
+  text-align: left;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.admin-dropdown-item:hover {
+  background: #f0fdfa;
+  color: #0f766e;
+  transform: translateX(3px);
+}
+
+.admin-dropdown-item.active {
+  background: #0f766e;
+  color: #ffffff;
+}
+
+/* ==============================================================
+   CARRITO FLOTANTE EN LATERAL IZQUIERDO (TIENDA CLIENTE)
+   ============================================================== */
+.floating-left-cart-btn {
+  position: fixed;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 998;
+  background: #0f766e;
+  color: #ffffff;
+  border: 2.5px solid #ffffff;
+  box-shadow: 0 10px 25px rgba(15, 118, 110, 0.4);
+  border-radius: 999px;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.floating-left-cart-btn:hover {
+  background: #115e59;
+  transform: translateY(-50%) scale(1.08);
+  box-shadow: 0 14px 30px rgba(15, 118, 110, 0.55);
+}
+
+.floating-left-cart-btn:active {
+  transform: translateY(-50%) scale(0.98);
+}
+
+.flc-icon-wrap {
+  position: relative;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.flc-badge {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  background: #f43f5e;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 900;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffffff;
+}
+
+.flc-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.flc-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  opacity: 0.9;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.flc-price {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #fef08a;
+}
+
+@media (max-width: 768px) {
+  .floating-left-cart-btn {
+    left: 10px;
+    padding: 10px;
+    border-radius: 999px;
+  }
+  .flc-info {
+    display: none;
+  }
+}

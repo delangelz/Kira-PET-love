@@ -42,6 +42,17 @@ const cartItemsList = document.getElementById("cartItemsList");
 const cartTotalPrice = document.getElementById("cartTotalPrice");
 const checkoutBtn = document.getElementById("checkoutBtn");
 
+// Carrito Flotante Lateral y Opciones de Envío
+const floatingLeftCartBtn = document.getElementById("floatingLeftCartBtn");
+const floatingCartCount = document.getElementById("floatingCartCount");
+const floatingCartTotal = document.getElementById("floatingCartTotal");
+const shippingOptDelivery = document.getElementById("shippingOptDelivery");
+const shippingOptPickup = document.getElementById("shippingOptPickup");
+const cartShippingCostInput = document.getElementById("cartShippingCostInput");
+const cartDeliveryCostRow = document.getElementById("cartDeliveryCostRow");
+const cartSubtotalVal = document.getElementById("cartSubtotalVal");
+const cartShippingDisplayVal = document.getElementById("cartShippingDisplayVal");
+
 // Autenticación Unificada
 const userLoggedOut = document.getElementById("userLoggedOut");
 const userLoggedIn = document.getElementById("userLoggedIn");
@@ -94,6 +105,11 @@ const adminBarNotesBtn = document.getElementById("adminBarNotesBtn");
 const adminBarNotesCount = document.getElementById("adminBarNotesCount");
 const adminBarMyOrdersBtn = document.getElementById("adminBarMyOrdersBtn");
 const adminBarMyOrdersCount = document.getElementById("adminBarMyOrdersCount");
+
+// Menú desplegable en Barra de Navegación de Admin
+const adminDropdownContainer = document.getElementById("adminDropdownContainer");
+const adminBarMoreDropdownBtn = document.getElementById("adminBarMoreDropdownBtn");
+const adminBarMoreDropdownMenu = document.getElementById("adminBarMoreDropdownMenu");
 
 const exitProductsBtn = document.getElementById("exitProductsBtn");
 const exitOrdersBtn = document.getElementById("exitOrdersBtn");
@@ -148,6 +164,14 @@ const dnOrderNotesDisplay = document.getElementById("dnOrderNotesDisplay");
 const dnOrderNotesEditor = document.getElementById("dnOrderNotesEditor");
 const dnOrderNotesInput = document.getElementById("dnOrderNotesInput");
 const dnSaveOrderNoteBtn = document.getElementById("dnSaveOrderNoteBtn");
+
+// Elementos de Envío / Delivery en Nota de Entrega
+const dnShippingCostVal = document.getElementById("dnShippingCostVal");
+const dnEditShippingBtn = document.getElementById("dnEditShippingBtn");
+const dnShippingEditorBox = document.getElementById("dnShippingEditorBox");
+const dnShippingInput = document.getElementById("dnShippingInput");
+const dnSaveShippingBtn = document.getElementById("dnSaveShippingBtn");
+const dnCancelShippingBtn = document.getElementById("dnCancelShippingBtn");
 
 // Elementos de Ganancias, Gráficas y Métricas (Analytics)
 const statsMonthFrom = document.getElementById("statsMonthFrom");
@@ -1657,6 +1681,8 @@ if (storeSettingsForm) {
 
 if (adminBarSettingsBtn) {
   adminBarSettingsBtn.addEventListener("click", () => {
+    if (adminBarMoreDropdownMenu) adminBarMoreDropdownMenu.style.display = "none";
+    if (adminBarMoreDropdownBtn) adminBarMoreDropdownBtn.classList.remove("active");
     storeSettingsModal.style.display = "flex";
   });
 }
@@ -1767,26 +1793,31 @@ function actualizarUIUsuario() {
     // Si es Admin o Vendedor, se activan sus botones directamente en la barra superior señalada
     if (rol === "admin" || rol === "vendedor") {
       adminNavHeaderBar.style.display = "flex";
-      if (adminBarUsersBtn) adminBarUsersBtn.style.display = (rol === "admin") ? "inline-flex" : "none";
-      if (adminBarSettingsBtn) adminBarSettingsBtn.style.display = (rol === "admin") ? "inline-flex" : "none";
+      if (adminDropdownContainer) adminDropdownContainer.style.display = "inline-block";
+      if (adminBarUsersBtn) adminBarUsersBtn.style.display = (rol === "admin") ? "flex" : "none";
+      if (adminBarSettingsBtn) adminBarSettingsBtn.style.display = (rol === "admin") ? "flex" : "none";
       if (adminBarStatsBtn) adminBarStatsBtn.style.display = (rol === "admin") ? "inline-flex" : "none";
       if (adminBarNotesBtn) adminBarNotesBtn.style.display = (rol === "admin" || rol === "vendedor") ? "inline-flex" : "none";
-      if (adminBarMyOrdersBtn) adminBarMyOrdersBtn.style.display = "inline-flex";
+      if (adminBarMyOrdersBtn) adminBarMyOrdersBtn.style.display = "flex";
       openMyOrdersBtn.style.display = "none";
       // Si la tienda está activa, mostrar también la barra de categorías para que el admin pueda filtrar
       if (storeView && storeView.style.display !== "none") {
         buyerCategoriesBar.style.display = "flex";
+        if (floatingLeftCartBtn) floatingLeftCartBtn.style.display = "flex";
       } else {
         buyerCategoriesBar.style.display = "none";
+        if (floatingLeftCartBtn) floatingLeftCartBtn.style.display = "none";
       }
     } else {
       buyerCategoriesBar.style.display = "flex";
       adminNavHeaderBar.style.display = "none";
+      if (adminDropdownContainer) adminDropdownContainer.style.display = "none";
       if (adminBarSettingsBtn) adminBarSettingsBtn.style.display = "none";
       if (adminBarStatsBtn) adminBarStatsBtn.style.display = "none";
       if (adminBarNotesBtn) adminBarNotesBtn.style.display = "none";
       if (adminBarMyOrdersBtn) adminBarMyOrdersBtn.style.display = "none";
       openMyOrdersBtn.style.display = "inline-flex";
+      if (floatingLeftCartBtn) floatingLeftCartBtn.style.display = "flex";
     }
     renderizarMisCompras();
   } else {
@@ -1794,8 +1825,10 @@ function actualizarUIUsuario() {
     userLoggedIn.style.display = "none";
     buyerCategoriesBar.style.display = "flex";
     adminNavHeaderBar.style.display = "none";
+    if (adminDropdownContainer) adminDropdownContainer.style.display = "none";
     if (adminBarSettingsBtn) adminBarSettingsBtn.style.display = "none";
     if (buyerActiveOrderBanner) buyerActiveOrderBanner.style.display = "none";
+    if (floatingLeftCartBtn) floatingLeftCartBtn.style.display = "flex";
   }
 }
 
@@ -2025,6 +2058,7 @@ function ocultarTodasLasVistas() {
   myOrdersView.style.display = "none";
   if (analyticsManagementView) analyticsManagementView.style.display = "none";
   if (notesManagementView) notesManagementView.style.display = "none";
+  if (floatingLeftCartBtn) floatingLeftCartBtn.style.display = "none";
   // Ocultar barra de categorías de comprador si estamos en secciones de gestión
   if (buyerCategoriesBar && currentUser && (currentUser.rol === "admin" || currentUser.rol === "vendedor")) {
     buyerCategoriesBar.style.display = "none";
@@ -2032,10 +2066,15 @@ function ocultarTodasLasVistas() {
 }
 
 function marcarBotonAdminActivo(btn) {
-  [adminBarStoreBtn, adminBarProductsBtn, adminBarOrdersBtn, adminBarStatsBtn, adminBarNotesBtn, adminBarMyOrdersBtn, adminBarUsersBtn].forEach((b) => {
+  [adminBarStoreBtn, adminBarProductsBtn, adminBarOrdersBtn, adminBarStatsBtn, adminBarNotesBtn, adminBarMyOrdersBtn, adminBarUsersBtn, adminBarMoreDropdownBtn].forEach((b) => {
     if (b) b.classList.remove("active");
   });
-  if (btn) btn.classList.add("active");
+  if (btn) {
+    btn.classList.add("active");
+    if (btn === adminBarUsersBtn || btn === adminBarMyOrdersBtn || btn === adminBarSettingsBtn) {
+      if (adminBarMoreDropdownBtn) adminBarMoreDropdownBtn.classList.add("active");
+    }
+  }
 }
 
 function mostrarTienda() {
@@ -2043,6 +2082,7 @@ function mostrarTienda() {
   storeView.style.display = "block";
   marcarBotonAdminActivo(adminBarStoreBtn);
   if (buyerCategoriesBar) buyerCategoriesBar.style.display = "flex";
+  if (floatingLeftCartBtn) floatingLeftCartBtn.style.display = "flex";
   currentCategory = "todos";
   if (currentCategoryTitle) currentCategoryTitle.textContent = "Catálogo de Productos para Mascotas";
   if (catPills) {
@@ -2070,6 +2110,8 @@ function mostrarPedidosClientes() {
 
 function mostrarGestionUsuarios() {
   ocultarTodasLasVistas();
+  if (adminBarMoreDropdownMenu) adminBarMoreDropdownMenu.style.display = "none";
+  if (adminBarMoreDropdownBtn) adminBarMoreDropdownBtn.classList.remove("active");
   usersManagementView.style.display = "block";
   marcarBotonAdminActivo(adminBarUsersBtn);
   renderizarTablaUsuariosAdmin();
@@ -2096,10 +2138,30 @@ function abrirMisCompras() {
     return;
   }
   ocultarTodasLasVistas();
+  if (adminBarMoreDropdownMenu) adminBarMoreDropdownMenu.style.display = "none";
+  if (adminBarMoreDropdownBtn) adminBarMoreDropdownBtn.classList.remove("active");
   myOrdersView.style.display = "block";
   if (currentUser && (currentUser.rol === "admin" || currentUser.rol === "vendedor")) {
     marcarBotonAdminActivo(adminBarMyOrdersBtn);
   }
+  renderizarMisCompras();
+}
+
+// Menú desplegable "Más Opciones" en la barra superior
+if (adminBarMoreDropdownBtn && adminBarMoreDropdownMenu) {
+  adminBarMoreDropdownBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const isVisible = adminBarMoreDropdownMenu.style.display === "flex";
+    adminBarMoreDropdownMenu.style.display = isVisible ? "none" : "flex";
+    adminBarMoreDropdownBtn.classList.toggle("active", !isVisible);
+  });
+  document.addEventListener("click", (e) => {
+    if (adminDropdownContainer && !adminDropdownContainer.contains(e.target)) {
+      adminBarMoreDropdownMenu.style.display = "none";
+      adminBarMoreDropdownBtn.classList.remove("active");
+    }
+  });
+}
   renderizarMisCompras();
 }
 
@@ -2658,15 +2720,34 @@ function guardarCarrito() {
 function actualizarBadgeCarrito() {
   if (!currentUser) {
     cart = [];
-    cartCount.textContent = "0";
+    if (cartCount) cartCount.textContent = "0";
+    if (floatingCartCount) floatingCartCount.textContent = "0";
+    if (floatingCartTotal) floatingCartTotal.textContent = "$0";
     return;
   }
   const totalItems = cart.reduce((acc, item) => acc + item.cantidad, 0);
-  cartCount.textContent = totalItems;
+  const subtotal = cart.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
+  const isPickup = shippingOptPickup && shippingOptPickup.checked;
+  const shippingCost = isPickup ? 0 : (Number(cartShippingCostInput ? cartShippingCostInput.value : 0) || 0);
+  const total = subtotal + (cart.length > 0 ? shippingCost : 0);
+
+  if (cartCount) cartCount.textContent = totalItems;
+  if (floatingCartCount) floatingCartCount.textContent = totalItems;
+  if (floatingCartTotal) floatingCartTotal.textContent = `$ ${Number(total).toLocaleString("es-AR")}`;
 }
 
 function renderizarCarrito() {
   cartItemsList.innerHTML = "";
+
+  const isPickup = shippingOptPickup && shippingOptPickup.checked;
+  if (cartDeliveryCostRow) {
+    cartDeliveryCostRow.style.display = isPickup ? "none" : "flex";
+  }
+
+  const shippingCost = isPickup ? 0 : (Number(cartShippingCostInput ? cartShippingCostInput.value : 0) || 0);
+  if (cartShippingDisplayVal) {
+    cartShippingDisplayVal.textContent = isPickup ? "Gratis ($0)" : `$ ${shippingCost.toLocaleString("es-AR")}`;
+  }
 
   if (cart.length === 0) {
     cartItemsList.innerHTML = `
@@ -2675,14 +2756,16 @@ function renderizarCarrito() {
         <p>Tu carrito está vacío</p>
       </div>
     `;
-    cartTotalPrice.textContent = "$0";
+    if (cartSubtotalVal) cartSubtotalVal.textContent = "$0";
+    if (cartTotalPrice) cartTotalPrice.textContent = "$0";
+    if (floatingCartTotal) floatingCartTotal.textContent = "$0";
     return;
   }
 
-  let total = 0;
+  let subtotal = 0;
   cart.forEach((item) => {
-    const subtotal = item.precio * item.cantidad;
-    total += subtotal;
+    const itemSubtotal = item.precio * item.cantidad;
+    subtotal += itemSubtotal;
 
     const div = document.createElement("div");
     div.className = "cart-item";
@@ -2690,7 +2773,7 @@ function renderizarCarrito() {
       <div class="cart-item-emoji">${getProductMediaHtml(item.imagen || item.emoji, item.titulo)}</div>
       <div class="cart-item-details">
         <div class="cart-item-title">${escapeHtml(item.titulo)}</div>
-        <div class="cart-item-price">$ ${Number(subtotal).toLocaleString("es-AR")}</div>
+        <div class="cart-item-price">$ ${Number(itemSubtotal).toLocaleString("es-AR")}</div>
         <div class="cart-qty-controls">
           <button class="qty-btn btn-minus" data-id="${item.id}">-</button>
           <span>${item.cantidad}</span>
@@ -2722,10 +2805,19 @@ function renderizarCarrito() {
     cartItemsList.appendChild(div);
   });
 
-  cartTotalPrice.textContent = `$ ${Number(total).toLocaleString("es-AR")}`;
+  const total = subtotal + shippingCost;
+  if (cartSubtotalVal) cartSubtotalVal.textContent = `$ ${Number(subtotal).toLocaleString("es-AR")}`;
+  if (cartTotalPrice) cartTotalPrice.textContent = `$ ${Number(total).toLocaleString("es-AR")}`;
+  if (floatingCartTotal) floatingCartTotal.textContent = `$ ${Number(total).toLocaleString("es-AR")}`;
 }
 
-openCartBtn.addEventListener("click", () => {
+// Oyentes para opciones de envío en carrito
+if (shippingOptDelivery) shippingOptDelivery.addEventListener("change", renderizarCarrito);
+if (shippingOptPickup) shippingOptPickup.addEventListener("change", renderizarCarrito);
+if (cartShippingCostInput) cartShippingCostInput.addEventListener("input", renderizarCarrito);
+
+// Abrir carrito desde botón superior tradicional o desde botón lateral flotante
+function abrirModalCarrito() {
   if (!currentUser) {
     showToast("🐾 Creá tu cuenta o ingresá para ver tu carrito");
     registerModal.style.display = "flex";
@@ -2733,7 +2825,10 @@ openCartBtn.addEventListener("click", () => {
   }
   renderizarCarrito();
   cartModal.style.display = "flex";
-});
+}
+
+if (openCartBtn) openCartBtn.addEventListener("click", abrirModalCarrito);
+if (floatingLeftCartBtn) floatingLeftCartBtn.addEventListener("click", abrirModalCarrito);
 
 closeCartBtn.addEventListener("click", () => {
   cartModal.style.display = "none";
@@ -2756,13 +2851,19 @@ checkoutBtn.addEventListener("click", async () => {
   checkoutBtn.textContent = "Procesando pedido...";
 
   try {
-    const total = cart.reduce((acc, i) => acc + i.precio * i.cantidad, 0);
+    const isPickup = shippingOptPickup && shippingOptPickup.checked;
+    const shippingCost = isPickup ? 0 : (Number(cartShippingCostInput ? cartShippingCostInput.value : 0) || 0);
+    const subtotal = cart.reduce((acc, i) => acc + i.precio * i.cantidad, 0);
+    const total = subtotal + shippingCost;
 
     await window.db.collection(ORDERS_COLLECTION).add({
       clienteNombre: currentUser.nombre,
       clienteEmail: currentUser.email,
       clienteTelefono: currentUser.telefono,
       productos: cart,
+      subtotal: subtotal,
+      costoEnvio: shippingCost,
+      tipoEnvio: isPickup ? "retiro" : "delivery",
       total: total,
       estado: "Nuevo Pedido",
       fecha: firebase.firestore.FieldValue.serverTimestamp()
@@ -2948,9 +3049,71 @@ function abrirNotaDeEntrega(order) {
       dnItemsTableBody.appendChild(tr);
     });
 
-    const totalFinal = Number(order.total) || subtotalCalc;
+    const costoEnvio = Number(order.costoEnvio) || 0;
+    const tipoEnvio = order.tipoEnvio || (costoEnvio > 0 ? "delivery" : "retiro");
+    const totalFinal = Number(order.total) || (subtotalCalc + costoEnvio);
+
     if (dnSubtotalVal) dnSubtotalVal.textContent = `$ ${subtotalCalc.toLocaleString("es-AR")}`;
     if (dnGrandTotal) dnGrandTotal.textContent = `$ ${totalFinal.toLocaleString("es-AR")}`;
+
+    if (dnShippingCostVal) {
+      if (costoEnvio > 0) {
+        dnShippingCostVal.textContent = `$ ${costoEnvio.toLocaleString("es-AR")}`;
+      } else if (tipoEnvio === "retiro") {
+        dnShippingCostVal.textContent = "Retiro en Local ($0)";
+      } else {
+        dnShippingCostVal.textContent = "$ 0";
+      }
+    }
+
+    if (dnEditShippingBtn) {
+      dnEditShippingBtn.style.display = isAdminOrVendor ? "inline-block" : "none";
+    }
+    if (dnShippingEditorBox) {
+      dnShippingEditorBox.style.display = "none";
+    }
+
+    if (dnEditShippingBtn && dnShippingEditorBox && dnShippingInput) {
+      dnEditShippingBtn.onclick = () => {
+        dnShippingEditorBox.style.display = "block";
+        dnShippingInput.value = costoEnvio;
+        dnShippingInput.focus();
+      };
+    }
+    if (dnCancelShippingBtn && dnShippingEditorBox) {
+      dnCancelShippingBtn.onclick = () => {
+        dnShippingEditorBox.style.display = "none";
+      };
+    }
+    if (dnSaveShippingBtn && dnShippingInput) {
+      dnSaveShippingBtn.onclick = async () => {
+        const nuevoCostoEnvio = Math.max(0, Number(dnShippingInput.value) || 0);
+        const nuevoTotal = subtotalCalc + nuevoCostoEnvio;
+        try {
+          await window.db.collection(ORDERS_COLLECTION).doc(order.id).update({
+            costoEnvio: nuevoCostoEnvio,
+            tipoEnvio: nuevoCostoEnvio > 0 ? "delivery" : "retiro",
+            total: nuevoTotal
+          });
+          order.costoEnvio = nuevoCostoEnvio;
+          order.tipoEnvio = nuevoCostoEnvio > 0 ? "delivery" : "retiro";
+          order.total = nuevoTotal;
+          if (dnShippingCostVal) {
+            dnShippingCostVal.textContent = nuevoCostoEnvio > 0 ? `$ ${nuevoCostoEnvio.toLocaleString("es-AR")}` : "Retiro en Local ($0)";
+          }
+          if (dnGrandTotal) {
+            dnGrandTotal.textContent = `$ ${nuevoTotal.toLocaleString("es-AR")}`;
+          }
+          if (dnShippingEditorBox) {
+            dnShippingEditorBox.style.display = "none";
+          }
+          showToast(`✅ Costo de delivery actualizado a $ ${nuevoCostoEnvio.toLocaleString("es-AR")}`);
+          renderizarTablaAdminPedidos();
+        } catch (err) {
+          showToast(`❌ Error al actualizar delivery: ${err.message}`);
+        }
+      };
+    }
   }
 
   // 6.5. Notas y Observaciones de Entrega
@@ -3097,6 +3260,29 @@ function renderizarTablaAdminPedidos() {
       const updateData = { estado: nuevoEstado };
       if (isNowDelivered && !order.fechaEntrega) {
         updateData.fechaEntrega = firebase.firestore.FieldValue.serverTimestamp();
+      }
+
+      // Requisito: Cuando pase a entregado, registrar automáticamente en Mis Notas
+      if (isNowDelivered && !order.notaEntregaGenerada) {
+        try {
+          const itemsList = (order.productos || [])
+            .map(p => `• ${p.cantidad}x ${p.titulo} ($ ${Number(p.precio * p.cantidad).toLocaleString('es-AR')})`)
+            .join('\n');
+          const costoEnvioTxt = Number(order.costoEnvio) > 0 ? ` (Delivery: $ ${Number(order.costoEnvio).toLocaleString('es-AR')})` : ' (Retiro Local)';
+          const notaEntrega = {
+            titulo: `🟢 Entrega Pedido #${order.id.slice(0, 6)} - ${order.clienteNombre}`,
+            categoria: "logistica",
+            pedidoId: order.id,
+            contenido: `Pedido #${order.id.slice(0, 8).toUpperCase()} entregado con éxito.\n👤 Cliente: ${order.clienteNombre} (${order.clienteTelefono || 'Sin teléfono'})\n💰 Total: $ ${Number(order.total).toLocaleString('es-AR')}${costoEnvioTxt}\n📦 Productos:\n${itemsList}${order.notas ? `\n📝 Observaciones: ${order.notas}` : ''}`,
+            creador: currentUser ? currentUser.email : "admin",
+            fecha: firebase.firestore.FieldValue.serverTimestamp()
+          };
+          await window.db.collection(NOTES_COLLECTION).add(notaEntrega);
+          updateData.notaEntregaGenerada = true;
+          order.notaEntregaGenerada = true;
+        } catch (errNota) {
+          console.warn("No se pudo agregar nota automática a Mis Notas:", errNota);
+        }
       }
 
       try {
