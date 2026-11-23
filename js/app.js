@@ -1324,6 +1324,11 @@ function abrirLightbox(idx) {
 }
 
 function cerrarLightbox() {
+  const imgEl = document.getElementById("lightboxImgEl");
+  if (imgEl) {
+    imgEl.classList.remove("zoomed");
+    imgEl.style.transformOrigin = "center center";
+  }
   if (imageLightboxModal) imageLightboxModal.style.display = "none";
 }
 
@@ -1333,11 +1338,59 @@ function actualizarContenidoLightbox() {
   const isUrl = currentImg.startsWith("http://") || currentImg.startsWith("https://") || currentImg.startsWith("data:image");
 
   if (isUrl) {
-    lightboxMediaContainer.innerHTML = `<img src="${escapeHtml(currentImg)}" alt="Foto ampliada" id="lightboxImgEl" title="Haz clic para alternar zoom">`;
+    lightboxMediaContainer.innerHTML = `<img src="${escapeHtml(currentImg)}" alt="Foto ampliada" id="lightboxImgEl">`;
     const imgEl = document.getElementById("lightboxImgEl");
     if (imgEl) {
-      imgEl.addEventListener("click", () => {
-        imgEl.classList.toggle("zoomed");
+      let isZoomed = false;
+
+      // Zoom focal exactamente en el punto donde el usuario hace clic
+      imgEl.addEventListener("click", (e) => {
+        const rect = imgEl.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+        const percentX = Math.max(0, Math.min(100, (clickX / rect.width) * 100));
+        const percentY = Math.max(0, Math.min(100, (clickY / rect.height) * 100));
+
+        if (!isZoomed) {
+          isZoomed = true;
+          imgEl.style.transformOrigin = `${percentX}% ${percentY}%`;
+          imgEl.classList.add("zoomed");
+        } else {
+          isZoomed = false;
+          imgEl.classList.remove("zoomed");
+          imgEl.style.transformOrigin = "center center";
+        }
+      });
+
+      // Desplazamiento fluido siguiendo el cursor mientras el zoom está activo
+      imgEl.addEventListener("mousemove", (e) => {
+        if (!isZoomed) return;
+        const cRect = lightboxMediaContainer.getBoundingClientRect();
+        const percentX = Math.max(0, Math.min(100, ((e.clientX - cRect.left) / cRect.width) * 100));
+        const percentY = Math.max(0, Math.min(100, ((e.clientY - cRect.top) / cRect.height) * 100));
+        imgEl.style.transformOrigin = `${percentX}% ${percentY}%`;
+      });
+
+      // Soporte táctil móvil para zoom en el punto tocado
+      imgEl.addEventListener("touchend", (e) => {
+        if (e.changedTouches.length === 1) {
+          const touch = e.changedTouches[0];
+          const rect = imgEl.getBoundingClientRect();
+          const clickX = touch.clientX - rect.left;
+          const clickY = touch.clientY - rect.top;
+          const percentX = Math.max(0, Math.min(100, (clickX / rect.width) * 100));
+          const percentY = Math.max(0, Math.min(100, (clickY / rect.height) * 100));
+
+          if (!isZoomed) {
+            isZoomed = true;
+            imgEl.style.transformOrigin = `${percentX}% ${percentY}%`;
+            imgEl.classList.add("zoomed");
+          } else {
+            isZoomed = false;
+            imgEl.classList.remove("zoomed");
+            imgEl.style.transformOrigin = "center center";
+          }
+        }
       });
     }
   } else {
