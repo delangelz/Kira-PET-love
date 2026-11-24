@@ -93,7 +93,7 @@
         <button class="cat-pill" data-cat="Salud">💊 Farmacia & Cuidado</button>
       </div>
 
-      <!-- 2. Para el Administrador y Vendedor: Directamente en la barra con menús desplegables -->
+      <!-- 2. Para el Administrador y Vendedor: Directamente en la barra con pestañas de sección -->
       <div id="adminNavHeaderBar" class="header-container admin-nav-bar" style="display: none;">
         <button class="admin-nav-pill active" id="adminBarStoreBtn">🛍️ Ver Tienda</button>
         <button class="admin-nav-pill" id="adminBarProductsBtn">📦 Mis Productos</button>
@@ -102,34 +102,41 @@
           📝 Mis Notas (<span id="adminBarNotesCount">0</span>)
         </button>
 
-        <!-- 1. Menú Desplegable: Clientes y Pedidos -->
-        <div class="admin-dropdown-container" id="adminClientsDropdownContainer">
-          <button type="button" class="admin-nav-pill admin-dropdown-trigger" id="adminBarClientsDropdownBtn">
-            👥 Clientes ▾
-          </button>
-          <div class="admin-dropdown-menu" id="adminBarClientsDropdownMenu" style="display: none;">
-            <button type="button" class="admin-dropdown-item" id="adminBarOrdersBtn">
+        <!-- 1. Menú: Clientes y Pedidos -->
+        <button type="button" class="admin-nav-pill admin-dropdown-trigger" id="adminBarClientsDropdownBtn">
+          👥 Clientes ▾
+        </button>
+
+        <!-- 2. Menú: Configuración de Cuenta -->
+        <button type="button" class="admin-nav-pill admin-dropdown-trigger" id="adminBarSettingsDropdownBtn">
+          ⚙️ Configuración de Cuenta ▾
+        </button>
+      </div>
+
+      <!-- 3. Sub-barra horizontal integrada (Flujo natural que empuja el contenido hacia abajo y NUNCA tapa nada) -->
+      <div id="adminSubNavRow" class="admin-sub-nav-row" style="display: none;">
+        <div class="header-container admin-sub-nav-container">
+          <!-- Opciones de Clientes -->
+          <div id="adminSubClientsGroup" class="admin-sub-group" style="display: none;">
+            <span class="admin-sub-badge">👥 Clientes:</span>
+            <button type="button" class="admin-sub-pill" id="adminBarOrdersBtn">
               📋 Pedidos Clientes (<span id="adminBarOrdersCount">0</span>)
             </button>
-            <button type="button" class="admin-dropdown-item admin-only-pill" id="adminBarUsersBtn">
+            <button type="button" class="admin-sub-pill admin-only-pill" id="adminBarUsersBtn">
               👥 Mis Clientes / Usuarios
             </button>
-            <button type="button" class="admin-dropdown-item" id="adminBarMyOrdersBtn">
+            <button type="button" class="admin-sub-pill" id="adminBarMyOrdersBtn">
               🛍️ Mis Compras (<span id="adminBarMyOrdersCount">0</span>)
             </button>
           </div>
-        </div>
 
-        <!-- 2. Menú Desplegable: Configuración de Cuenta -->
-        <div class="admin-dropdown-container" id="adminSettingsDropdownContainer">
-          <button type="button" class="admin-nav-pill admin-dropdown-trigger" id="adminBarSettingsDropdownBtn">
-            ⚙️ Configuración de Cuenta ▾
-          </button>
-          <div class="admin-dropdown-menu menu-right" id="adminBarSettingsDropdownMenu" style="display: none;">
-            <button type="button" class="admin-dropdown-item" id="adminBarSettingsBtn">
+          <!-- Opciones de Configuración de Cuenta -->
+          <div id="adminSubSettingsGroup" class="admin-sub-group" style="display: none;">
+            <span class="admin-sub-badge">⚙️ Cuenta:</span>
+            <button type="button" class="admin-sub-pill" id="adminBarSettingsBtn">
               ⚙️ Configurar Logo y Tienda
             </button>
-            <button type="button" class="admin-dropdown-item" id="adminBarProfileBtn">
+            <button type="button" class="admin-sub-pill" id="adminBarProfileBtn">
               👤 Mi Perfil de Administrador
             </button>
           </div>

@@ -106,15 +106,12 @@ const adminBarNotesCount = document.getElementById("adminBarNotesCount");
 const adminBarMyOrdersBtn = document.getElementById("adminBarMyOrdersBtn");
 const adminBarMyOrdersCount = document.getElementById("adminBarMyOrdersCount");
 
-// Menús desplegables en Barra de Navegación de Admin (Clientes y Configuración de Cuenta)
-const adminClientsDropdownContainer = document.getElementById("adminClientsDropdownContainer");
+// Sub-barra integrada de Navegación de Admin (Clientes y Configuración de Cuenta)
+const adminSubNavRow = document.getElementById("adminSubNavRow");
+const adminSubClientsGroup = document.getElementById("adminSubClientsGroup");
+const adminSubSettingsGroup = document.getElementById("adminSubSettingsGroup");
 const adminBarClientsDropdownBtn = document.getElementById("adminBarClientsDropdownBtn");
-const adminBarClientsDropdownMenu = document.getElementById("adminBarClientsDropdownMenu");
-
-const adminSettingsDropdownContainer = document.getElementById("adminSettingsDropdownContainer");
 const adminBarSettingsDropdownBtn = document.getElementById("adminBarSettingsDropdownBtn");
-const adminBarSettingsDropdownMenu = document.getElementById("adminBarSettingsDropdownMenu");
-
 const adminBarProfileBtn = document.getElementById("adminBarProfileBtn");
 
 // Precios de compra / costo de producto
@@ -1821,15 +1818,13 @@ function actualizarUIUsuario() {
     // Si es Admin o Vendedor, se activan sus botones directamente en la barra superior señalada
     if (isStaff) {
       adminNavHeaderBar.style.display = "flex";
-      if (adminClientsDropdownContainer) adminClientsDropdownContainer.style.display = "inline-block";
-      if (adminSettingsDropdownContainer) adminSettingsDropdownContainer.style.display = "inline-block";
-      if (adminBarOrdersBtn) adminBarOrdersBtn.style.display = "flex";
-      if (adminBarUsersBtn) adminBarUsersBtn.style.display = isAdmin ? "flex" : "none";
-      if (adminBarSettingsBtn) adminBarSettingsBtn.style.display = "flex";
-      if (adminBarProfileBtn) adminBarProfileBtn.style.display = "flex";
+      if (adminBarOrdersBtn) adminBarOrdersBtn.style.display = "inline-flex";
+      if (adminBarUsersBtn) adminBarUsersBtn.style.display = isAdmin ? "inline-flex" : "none";
+      if (adminBarSettingsBtn) adminBarSettingsBtn.style.display = "inline-flex";
+      if (adminBarProfileBtn) adminBarProfileBtn.style.display = "inline-flex";
       if (adminBarStatsBtn) adminBarStatsBtn.style.display = "inline-flex";
       if (adminBarNotesBtn) adminBarNotesBtn.style.display = "inline-flex";
-      if (adminBarMyOrdersBtn) adminBarMyOrdersBtn.style.display = "flex";
+      if (adminBarMyOrdersBtn) adminBarMyOrdersBtn.style.display = "inline-flex";
       openMyOrdersBtn.style.display = "none";
       // Si la tienda está activa, mostrar también la barra de categorías para que el admin pueda filtrar
       if (storeView && storeView.style.display !== "none") {
@@ -1842,8 +1837,7 @@ function actualizarUIUsuario() {
     } else {
       buyerCategoriesBar.style.display = "flex";
       adminNavHeaderBar.style.display = "none";
-      if (adminClientsDropdownContainer) adminClientsDropdownContainer.style.display = "none";
-      if (adminSettingsDropdownContainer) adminSettingsDropdownContainer.style.display = "none";
+      if (adminSubNavRow) adminSubNavRow.style.display = "none";
       if (adminBarStatsBtn) adminBarStatsBtn.style.display = "none";
       if (adminBarNotesBtn) adminBarNotesBtn.style.display = "none";
       openMyOrdersBtn.style.display = "inline-flex";
@@ -1855,8 +1849,7 @@ function actualizarUIUsuario() {
     userLoggedIn.style.display = "none";
     buyerCategoriesBar.style.display = "flex";
     adminNavHeaderBar.style.display = "none";
-    if (adminClientsDropdownContainer) adminClientsDropdownContainer.style.display = "none";
-    if (adminSettingsDropdownContainer) adminSettingsDropdownContainer.style.display = "none";
+    if (adminSubNavRow) adminSubNavRow.style.display = "none";
     if (buyerActiveOrderBanner) buyerActiveOrderBanner.style.display = "none";
     if (floatingLeftCartBtn) floatingLeftCartBtn.style.display = "flex";
   }
@@ -2096,9 +2089,10 @@ function ocultarTodasLasVistas() {
 }
 
 function cerrarTodosLosDropdownsAdmin() {
-  if (adminBarClientsDropdownMenu) adminBarClientsDropdownMenu.style.display = "none";
+  if (adminSubNavRow) adminSubNavRow.style.display = "none";
+  if (adminSubClientsGroup) adminSubClientsGroup.style.display = "none";
+  if (adminSubSettingsGroup) adminSubSettingsGroup.style.display = "none";
   if (adminBarClientsDropdownBtn) adminBarClientsDropdownBtn.classList.remove("active");
-  if (adminBarSettingsDropdownMenu) adminBarSettingsDropdownMenu.style.display = "none";
   if (adminBarSettingsDropdownBtn) adminBarSettingsDropdownBtn.classList.remove("active");
 }
 
@@ -2124,11 +2118,22 @@ function marcarBotonAdminActivo(btn) {
   [adminBarStoreBtn, adminBarProductsBtn, adminBarStatsBtn, adminBarNotesBtn, adminBarClientsDropdownBtn, adminBarSettingsDropdownBtn].forEach((b) => {
     if (b) b.classList.remove("active");
   });
+  [adminBarOrdersBtn, adminBarUsersBtn, adminBarMyOrdersBtn, adminBarSettingsBtn, adminBarProfileBtn].forEach((b) => {
+    if (b) b.classList.remove("active");
+  });
   if (btn) {
     if (btn === adminBarOrdersBtn || btn === adminBarUsersBtn || btn === adminBarMyOrdersBtn) {
       if (adminBarClientsDropdownBtn) adminBarClientsDropdownBtn.classList.add("active");
+      if (adminSubNavRow) adminSubNavRow.style.display = "flex";
+      if (adminSubClientsGroup) adminSubClientsGroup.style.display = "flex";
+      if (adminSubSettingsGroup) adminSubSettingsGroup.style.display = "none";
+      btn.classList.add("active");
     } else if (btn === adminBarSettingsBtn || btn === adminBarProfileBtn) {
       if (adminBarSettingsDropdownBtn) adminBarSettingsDropdownBtn.classList.add("active");
+      if (adminSubNavRow) adminSubNavRow.style.display = "flex";
+      if (adminSubClientsGroup) adminSubClientsGroup.style.display = "none";
+      if (adminSubSettingsGroup) adminSubSettingsGroup.style.display = "flex";
+      btn.classList.add("active");
     } else {
       btn.classList.add("active");
     }
@@ -2208,14 +2213,15 @@ function abrirMisCompras() {
   renderizarMisCompras();
 }
 
-// Menú desplegable 1: Clientes y Pedidos
-if (adminBarClientsDropdownBtn && adminBarClientsDropdownMenu) {
-  adminBarClientsDropdownBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    const isVisible = adminBarClientsDropdownMenu.style.display === "flex";
+// Sub-barra desplegable 1: Clientes y Pedidos
+if (adminBarClientsDropdownBtn) {
+  adminBarClientsDropdownBtn.addEventListener("click", () => {
+    const isAlreadyOpen = adminSubNavRow && adminSubNavRow.style.display === "flex" &&
+                          adminSubClientsGroup && adminSubClientsGroup.style.display === "flex";
     cerrarTodosLosDropdownsAdmin();
-    if (!isVisible) {
-      adminBarClientsDropdownMenu.style.display = "flex";
+    if (!isAlreadyOpen) {
+      if (adminSubNavRow) adminSubNavRow.style.display = "flex";
+      if (adminSubClientsGroup) adminSubClientsGroup.style.display = "flex";
       adminBarClientsDropdownBtn.classList.add("active");
     } else {
       restaurarBotonAdminActivoSegunVista();
@@ -2223,30 +2229,21 @@ if (adminBarClientsDropdownBtn && adminBarClientsDropdownMenu) {
   });
 }
 
-// Menú desplegable 2: Configuración de Cuenta
-if (adminBarSettingsDropdownBtn && adminBarSettingsDropdownMenu) {
-  adminBarSettingsDropdownBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    const isVisible = adminBarSettingsDropdownMenu.style.display === "flex";
+// Sub-barra desplegable 2: Configuración de Cuenta
+if (adminBarSettingsDropdownBtn) {
+  adminBarSettingsDropdownBtn.addEventListener("click", () => {
+    const isAlreadyOpen = adminSubNavRow && adminSubNavRow.style.display === "flex" &&
+                          adminSubSettingsGroup && adminSubSettingsGroup.style.display === "flex";
     cerrarTodosLosDropdownsAdmin();
-    if (!isVisible) {
-      adminBarSettingsDropdownMenu.style.display = "flex";
+    if (!isAlreadyOpen) {
+      if (adminSubNavRow) adminSubNavRow.style.display = "flex";
+      if (adminSubSettingsGroup) adminSubSettingsGroup.style.display = "flex";
       adminBarSettingsDropdownBtn.classList.add("active");
     } else {
       restaurarBotonAdminActivoSegunVista();
     }
   });
 }
-
-// Clic fuera para cerrar ambos menús
-document.addEventListener("click", (e) => {
-  const insideClients = adminClientsDropdownContainer && adminClientsDropdownContainer.contains(e.target);
-  const insideSettings = adminSettingsDropdownContainer && adminSettingsDropdownContainer.contains(e.target);
-  if (!insideClients && !insideSettings) {
-    cerrarTodosLosDropdownsAdmin();
-    restaurarBotonAdminActivoSegunVista();
-  }
-});
 
 // Botones de la barra superior
 if (adminBarStoreBtn) adminBarStoreBtn.addEventListener("click", mostrarTienda);
