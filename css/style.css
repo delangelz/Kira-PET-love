@@ -45,7 +45,8 @@ body {
   background: linear-gradient(135deg, var(--pet-header), #134e4a);
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 1100;
+  overflow: visible !important;
   box-shadow: var(--shadow-md);
   color: #ffffff;
 }
@@ -290,6 +291,9 @@ body {
 .ml-header-bottom {
   background: rgba(0, 0, 0, 0.12);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: visible !important;
+  position: relative;
+  z-index: 1000;
 }
 
 .categories-bar {
@@ -297,6 +301,21 @@ body {
   gap: 8px;
   overflow-x: auto;
   padding: 8px 20px;
+}
+
+/* Barra de navegación exclusiva del Administrador / Vendedor */
+.admin-nav-bar,
+#adminNavHeaderBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  overflow: visible !important;
+  overflow-x: visible !important;
+  overflow-y: visible !important;
+  position: relative;
+  z-index: 1000;
+  flex-wrap: wrap;
 }
 
 .cat-pill, .admin-nav-pill {
@@ -3693,11 +3712,12 @@ html, body {
 }
 
 /* ==============================================================
-   MENÚ DESPLEGABLE EN BARRA ADMIN (LOGO Y TIENDA, USUARIOS, COMPRAS)
+   MENÚ DESPLEGABLE EN BARRA ADMIN (CLIENTES, PEDIDOS, CONFIGURACIÓN)
    ============================================================== */
 .admin-dropdown-container {
   position: relative;
   display: inline-block;
+  overflow: visible !important;
 }
 
 .admin-dropdown-trigger {
@@ -3706,60 +3726,63 @@ html, body {
   border: 1px solid rgba(255, 255, 255, 0.4) !important;
   color: #ffffff !important;
   font-weight: 800;
+  transition: var(--transition);
 }
 .admin-dropdown-trigger:hover,
 .admin-dropdown-trigger.active {
   background: #ffffff !important;
   color: #0f766e !important;
+  border-color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .admin-dropdown-menu {
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + 8px);
   left: 0;
-  background: #ffffff;
-  border: 1.5px solid #0f766e;
-  border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  min-width: 250px;
-  z-index: 1050;
-  padding: 6px;
+  background: #ffffff !important;
+  border: 2px solid #0f766e !important;
+  border-radius: 12px !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28) !important;
+  min-width: 260px;
+  z-index: 999999 !important;
+  padding: 8px !important;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 .admin-dropdown-menu.menu-right {
-  left: auto;
-  right: 0;
+  left: auto !important;
+  right: 0 !important;
 }
 
 .admin-dropdown-item {
   display: flex !important;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
-  padding: 10px 14px;
+  padding: 10px 16px;
   border: none;
-  background: transparent;
-  font-size: 0.85rem;
+  background: #f8fafc;
+  font-size: 0.88rem;
   font-weight: 700;
   color: #1e293b;
   text-align: left;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
 }
 
 .admin-dropdown-item:hover {
-  background: #f0fdfa;
-  color: #0f766e;
-  transform: translateX(3px);
+  background: #e6fffa !important;
+  color: #0f766e !important;
+  transform: translateX(4px);
 }
 
 .admin-dropdown-item.active {
-  background: #0f766e;
-  color: #ffffff;
+  background: #0f766e !important;
+  color: #ffffff !important;
 }
 
 /* ==============================================================

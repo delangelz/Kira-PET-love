@@ -2102,6 +2102,24 @@ function cerrarTodosLosDropdownsAdmin() {
   if (adminBarSettingsDropdownBtn) adminBarSettingsDropdownBtn.classList.remove("active");
 }
 
+function restaurarBotonAdminActivoSegunVista() {
+  if (ordersManagementView && ordersManagementView.style.display === "block") {
+    marcarBotonAdminActivo(adminBarOrdersBtn);
+  } else if (usersManagementView && usersManagementView.style.display === "block") {
+    marcarBotonAdminActivo(adminBarUsersBtn);
+  } else if (myOrdersView && myOrdersView.style.display === "block") {
+    marcarBotonAdminActivo(adminBarMyOrdersBtn);
+  } else if (productsManagementView && productsManagementView.style.display === "block") {
+    marcarBotonAdminActivo(adminBarProductsBtn);
+  } else if (analyticsManagementView && analyticsManagementView.style.display === "block") {
+    marcarBotonAdminActivo(adminBarStatsBtn);
+  } else if (notesManagementView && notesManagementView.style.display === "block") {
+    marcarBotonAdminActivo(adminBarNotesBtn);
+  } else if (storeView && storeView.style.display === "block") {
+    marcarBotonAdminActivo(adminBarStoreBtn);
+  }
+}
+
 function marcarBotonAdminActivo(btn) {
   [adminBarStoreBtn, adminBarProductsBtn, adminBarStatsBtn, adminBarNotesBtn, adminBarClientsDropdownBtn, adminBarSettingsDropdownBtn].forEach((b) => {
     if (b) b.classList.remove("active");
@@ -2199,6 +2217,8 @@ if (adminBarClientsDropdownBtn && adminBarClientsDropdownMenu) {
     if (!isVisible) {
       adminBarClientsDropdownMenu.style.display = "flex";
       adminBarClientsDropdownBtn.classList.add("active");
+    } else {
+      restaurarBotonAdminActivoSegunVista();
     }
   });
 }
@@ -2212,6 +2232,8 @@ if (adminBarSettingsDropdownBtn && adminBarSettingsDropdownMenu) {
     if (!isVisible) {
       adminBarSettingsDropdownMenu.style.display = "flex";
       adminBarSettingsDropdownBtn.classList.add("active");
+    } else {
+      restaurarBotonAdminActivoSegunVista();
     }
   });
 }
@@ -2222,6 +2244,7 @@ document.addEventListener("click", (e) => {
   const insideSettings = adminSettingsDropdownContainer && adminSettingsDropdownContainer.contains(e.target);
   if (!insideClients && !insideSettings) {
     cerrarTodosLosDropdownsAdmin();
+    restaurarBotonAdminActivoSegunVista();
   }
 });
 
