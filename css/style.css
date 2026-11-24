@@ -1471,7 +1471,7 @@ body {
   display: flex;
   align-items: flex-start; /* CRÍTICO: flex-start previene el bug de bloqueo de scroll centrado */
   justify-content: center;
-  z-index: 1000;
+  z-index: 999999 !important; /* CRÍTICO: Siempre por encima de toda la cabecera sticky y menús */
   padding: 24px 16px 40px 16px; /* Espacio superior e inferior para nunca recortar */
   backdrop-filter: blur(4px);
   overflow-y: auto; /* Permite scroll fluido con la rueda del ratón en cualquier parte */
@@ -3712,79 +3712,12 @@ html, body {
 }
 
 /* ==============================================================
-   SUB-BARRA DE NAVEGACIÓN ADMIN (EMPUJA EL CONTENIDO, NADA QUEDA TAPADO)
+   MENÚ DESPLEGABLE EN BARRA ADMIN (CLIENTES, PEDIDOS, CONFIGURACIÓN)
    ============================================================== */
-.admin-sub-nav-row {
-  background: rgba(0, 0, 0, 0.22);
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.15);
-  animation: fadeInSubNav 0.2s ease;
-  width: 100%;
-}
-
-@keyframes fadeInSubNav {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.admin-sub-nav-container {
-  padding: 8px 20px !important;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.admin-sub-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.admin-sub-badge {
-  font-size: 0.8rem;
-  font-weight: 800;
-  color: #a7f3d0;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-right: 4px;
-}
-
-.admin-sub-pill {
-  display: inline-flex !important;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  border-radius: 999px;
-  font-size: 0.82rem;
-  font-weight: 700;
-  background: rgba(255, 255, 255, 0.92);
-  color: #0f766e;
-  border: 1.5px solid rgba(255, 255, 255, 0.95);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.admin-sub-pill:hover {
-  background: #ffffff;
-  color: #115e59;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
-}
-
-.admin-sub-pill.active {
-  background: #0f766e !important;
-  color: #ffffff !important;
-  border-color: #5eead4 !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+.admin-dropdown-container {
+  position: relative;
+  display: inline-block;
+  overflow: visible !important;
 }
 
 .admin-dropdown-trigger {
@@ -3801,6 +3734,55 @@ html, body {
   color: #0f766e !important;
   border-color: #ffffff !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.admin-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background: #ffffff !important;
+  border: 2px solid #0f766e !important;
+  border-radius: 12px !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28) !important;
+  min-width: 260px;
+  z-index: 5000 !important;
+  padding: 8px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.admin-dropdown-menu.menu-right {
+  left: auto !important;
+  right: 0 !important;
+}
+
+.admin-dropdown-item {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  background: #f8fafc;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1e293b;
+  text-align: left;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.admin-dropdown-item:hover {
+  background: #e6fffa !important;
+  color: #0f766e !important;
+  transform: translateX(4px);
+}
+
+.admin-dropdown-item.active {
+  background: #0f766e !important;
+  color: #ffffff !important;
 }
 
 /* ==============================================================
